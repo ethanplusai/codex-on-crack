@@ -79,9 +79,18 @@ The original package, installer and tests are preserved unchanged under
 Run its commands from that directory. See the root
 [OpenCode guide](../INSTALL-IN-OPENCODE.md) for the entry point.
 
-## Repository name
+## Repository URL
 
-The product is called Codex on Crack. The existing Astra Flash Orchestrator URL
-remains the transition link. Renaming a GitHub repository does not update a local
-folder name or install a plugin. If the repository is renamed later, follow its
-published instructions for updating your clone's remote.
+The existing repository is now [ethanplusai/codex-on-crack](https://github.com/ethanplusai/codex-on-crack).
+GitHub redirects the former `ethanplusai/astra-flash-orchestrator` URL.
+The repository history, stars, issues and pull requests stay with the same repository.
+
+To update an existing HTTPS clone's remote:
+
+```sh
+git remote set-url origin https://github.com/ethanplusai/codex-on-crack.git
+```
+
+For SSH clones, use `git@github.com:ethanplusai/codex-on-crack.git` instead.
+Changing the remote does not rename your local folder, reinstall the plugin,
+or migrate an existing orchestration policy.

@@ -13,7 +13,7 @@ e20b8fcd10e5a9f4243f57285409d46ebc7b85cc5855247ebe0cc4f42fe26f0d  docs/MODEL-SEL
 b9e622d4587d0d0547a252f21512dc8fad41ad5a2a39f7868551df8357120b05  docs/README.md
 87d38c621e65c7c9477febc2f59593e4531ab3a9a97d92c6a3f8634402faafb0  docs/RECORDING.md
 3dd23d01c57cad0685506bf57f05ee98dba69ae19961b519c0395d3d9b563561  docs/TROUBLESHOOTING.md
-d3f6ecd17559464ee053bd4b055f153704302594e0cf3346c1d642d59069fad0  docs/UPGRADING.md
+f3d71d52ddb01e02e34a4042c60ef6f9e521df1af59325c763175572d5d0147d  docs/UPGRADING.md
 846f9d8bd8695f7d49c5501a34f519e9ba7f1edd07a27e9c21192b7273826a33  docs/WORKFLOW.md
 d0980ef0fbe24e35df2fa27eb9cc28c6b83bdd9362f0830dfcd505e313dcd2e5  docs/media/panel-demo.gif
 306a957fcb99eae7bc9b2c268b8eb53ff27ac2e5a862c3498be53b9592c9a6c5  legacy/README.md
@@ -94,7 +94,7 @@ b519725c04254659e112ddc0b2500a49f45087642e971404a5f1db901f607431  panel/test/htt
 c8a982266d3c9357b6d53e7ad6fe5d4a09e8d7be38e728776a9d21670922fafb  panel/test/recording.test.mjs
 b95a225858b3149fa79e46dcb8bf94b063b4665dfd8ee9398014b0ed88b37e95  panel/test/sessions.test.mjs
 441a582231f1f6e37f062e2b7b56dd6fa73b4d3c2a6b2a4072ddc8018bd82a81  panel/test/ui.test.mjs
-1e20c1ddb49ba3281ad547aec04adb7e8cb3b6bb66aa7d6cc1a77327246f4baf  plugins/codex-on-crack-panel/.codex-plugin/plugin.json
+d846629e7272f70c3c4512487431d125154422469ac10637c94b6b12946fb785  plugins/codex-on-crack-panel/.codex-plugin/plugin.json
 fdeb32610144eb72297b99704f4dcb985e5fdaaa7fc1152f845aa9c7d4eb78f8  plugins/codex-on-crack-panel/.mcp.json
 7d8067ddbb28bc475149f29bb01b6c8ffcdcf51516034003f4dde582f8216e09  plugins/codex-on-crack-panel/README.md
 4e1cfe074fbcb3ac71771a760b1b923a2e94d5681a45c67a0eabed0081c152e9  plugins/codex-on-crack-panel/assets/icon.svg
@@ -110,7 +110,7 @@ dec2e6355f1e035d09ab101ca3e9043a551a62c1633491c02f435340b750160e  plugins/codex-
 7c3179e9b8b28b7191d907423589f578ba9f79ab9139d0ba83eb25dbced79908  plugins/codex-on-crack-panel/server/ui/panel.mjs
 2909609edd602b01a3fec56766e91ffe7d54addfb24069f2dc5d3d88c3b48a5e  plugins/codex-on-crack-panel/skills/crack-panel/SKILL.md
 8afef753fc270290a61d407e3221dee48aab80ffe1ae424067dd72679683183b  plugins/codex-on-crack-panel/skills/crack-panel/agents/openai.yaml
-b4cb8871d5bcec3f74480c64e8d40030fe89b2b674655d35379bc17d6dccea24  plugins/codex-on-crack/.codex-plugin/plugin.json
+a95a14c7c82a907322c2d2586cf4c7b9a42444cc4b50c4aca85fd2b7189e32a6  plugins/codex-on-crack/.codex-plugin/plugin.json
 7f1d15138a5926cdca7fb239a632d0c66c0b85c1cf16f7d4850b1477980ba681  plugins/codex-on-crack/skills/crack-plan/SKILL.md
 ea503af26f79ab64b5dd35b4bb99300640fce27f7a1fbc82ab7d1b1708e1f8fb  plugins/codex-on-crack/skills/crack-plan/agents/openai.yaml
 93c0024a57139e903fcff804b65fea6037ee150d045e087e0ab0d45cc40a9956  plugins/codex-on-crack/skills/crack-plan/scripts/plan.mjs
