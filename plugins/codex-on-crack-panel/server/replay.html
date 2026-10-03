@@ -1,0 +1,534 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>Build replay</title><style>/* Build panel: a flat Codex utility inspector. Monochrome neutral surfaces;
+   colour is reserved for warnings and failures. Host style variables (MCP
+   Apps) take precedence; the fallbacks match the official SDK stylesheet.
+   Variables are prefixed so they never collide with the SDK's own tokens. */
+:root {
+  color-scheme: light dark;
+  --p-bg: var(--color-background-primary, light-dark(#ffffff, #181818));
+  --p-fg: var(--color-text-primary, light-dark(#1a1c1f, #f3f3f3));
+  --p-fg-2: var(--color-text-secondary, light-dark(rgb(26 28 31 / 62%), rgb(255 255 255 / 60%)));
+  --p-fg-3: var(--color-text-tertiary, light-dark(rgb(26 28 31 / 44%), rgb(255 255 255 / 40%)));
+  --p-line: var(--color-border-secondary, light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8%)));
+  --p-line-strong: var(--color-border-primary, light-dark(rgb(26 28 31 / 13%), rgb(255 255 255 / 13%)));
+  --p-hover: color-mix(in srgb, var(--p-fg) 5%, transparent);
+  --p-selected: color-mix(in srgb, var(--p-fg) 8%, transparent);
+  --p-raised: color-mix(in oklab, var(--p-fg) 4%, var(--p-bg));
+  --p-inverse: var(--color-text-inverse, var(--p-bg));
+  --p-ring: var(--color-ring-primary, color-mix(in srgb, var(--p-fg) 55%, transparent));
+  --p-ok: var(--color-text-success, light-dark(#2f7a4c, #7cc996));
+  --p-warn: var(--color-text-warning, light-dark(#a15500, #f0ad5c));
+  --p-bad: var(--color-text-danger, light-dark(#c2382d, #ff8576));
+  --p-radius: var(--border-radius-md, 8px);
+  --p-radius-lg: var(--border-radius-lg, 12px);
+  --p-size: var(--font-text-sm-size, 13px);
+  --p-size-sm: max(11px, calc(var(--p-size) - 1px));
+  --p-font: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  --p-mono: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  --p-medium: var(--font-weight-medium, 500);
+  --p-semibold: var(--font-weight-semibold, 600);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--p-bg);
+  color: var(--p-fg);
+  font: var(--p-size)/1.45 var(--p-font);
+  -webkit-font-smoothing: antialiased;
+}
+button, select, textarea, input { font: inherit; color: inherit; }
+h1, h2, h3, p, ul, dl, figure { margin: 0; }
+ul { padding: 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.muted { color: var(--p-fg-2); }
+.small { font-size: var(--p-size-sm); }
+.num { font-variant-numeric: tabular-nums; }
+.spacer, .grow { flex: 1; min-width: 0; }
+.unknown { color: var(--p-fg-3); font-style: italic; }
+code { font-family: var(--p-mono); font-size: 0.92em; color: var(--p-fg-2); overflow-wrap: anywhere; }
+
+/* Native host focus ring everywhere a control can take keyboard focus. */
+:focus-visible { outline: 2px solid var(--p-ring); outline-offset: 2px; }
+.tab:focus-visible, .row:focus-visible, .subtab:focus-visible, summary:focus-visible { outline-offset: -2px; border-radius: 4px; }
+
+#app { container-type: inline-size; min-height: 100vh; }
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ---------------------------------------------------------------- header */
+.topbar { border-bottom: 1px solid var(--p-line); padding: 0 16px; }
+.titlebar { display: flex; align-items: baseline; gap: 8px; min-height: 40px; padding-top: 10px; }
+.titlebar h1 { font-size: var(--p-size); font-weight: var(--p-semibold); white-space: nowrap; }
+.titlebar .sub { color: var(--p-fg-3); font-size: var(--p-size-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.conn { display: inline-flex; align-items: center; gap: 6px; font-size: var(--p-size-sm); color: var(--p-fg-3); white-space: nowrap; }
+.conn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--p-fg-3); }
+.conn.live::before { background: var(--p-fg-2); }
+.conn.lost { color: var(--p-bad); }
+.conn.lost::before { background: var(--p-bad); }
+
+.tabs { display: flex; gap: 18px; margin-top: 2px; }
+.tab {
+  position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 0 9px; border: 0; background: none;
+  color: var(--p-fg-2); font-weight: var(--p-medium); cursor: var(--cursor-interaction, pointer); white-space: nowrap;
+}
+.tab:hover { color: var(--p-fg); }
+.tab[aria-selected="true"] { color: var(--p-fg); }
+.tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1.5px; background: var(--p-fg); border-radius: 1px; }
+.count { min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--p-selected); color: var(--p-fg-2); font-size: 11px; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* One-line strips under the header: demo provenance, lost connection. */
+.strip { display: flex; align-items: center; gap: 10px; padding: 6px 16px; border-bottom: 1px solid var(--p-line); font-size: var(--p-size-sm); color: var(--p-fg-2); }
+.strip strong { color: var(--p-fg); font-weight: var(--p-medium); }
+.strip.lost, .strip.lost strong { color: var(--p-bad); }
+
+/* ---------------------------------------------------------------- buttons */
+.button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px;
+  border-radius: var(--p-radius); border: 1px solid var(--p-line-strong); background: transparent;
+  font-weight: var(--p-medium); cursor: var(--cursor-interaction, pointer); white-space: nowrap;
+}
+.button.small { height: 26px; padding: 0 9px; font-size: var(--p-size-sm); }
+.button:hover:not(:disabled) { background: var(--p-hover); }
+.button.primary { background: var(--p-fg); border-color: transparent; color: var(--p-inverse); }
+.button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--p-fg) 82%, transparent); }
+.button.danger { background: var(--p-bad); border-color: transparent; color: #fff; }
+.button.ghost { border-color: transparent; color: var(--p-fg-2); }
+.button.ghost:hover:not(:disabled) { color: var(--p-fg); }
+.button:disabled { opacity: 0.4; cursor: default; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.reason { font-size: var(--p-size-sm); color: var(--p-fg-3); }
+
+/* ---------------------------------------------------------------- status */
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--p-fg-3); flex: none; }
+.dot.live { background: var(--p-fg); }
+.dot.ok { background: var(--p-ok); }
+.dot.warn { background: var(--p-warn); }
+.dot.bad { background: var(--p-bad); }
+.dot.hollow { background: transparent; box-shadow: inset 0 0 0 1px var(--p-fg-3); }
+@media (prefers-reduced-motion: no-preference) {
+  .dot.pulse { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+}
+.status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.status.warn { color: var(--p-warn); }
+.status.bad { color: var(--p-bad); }
+
+.line { display: flex; flex-wrap: wrap; align-items: center; row-gap: 2px; min-width: 0; }
+.line > * + *::before { content: "·"; margin: 0 6px; color: var(--p-fg-3); font-style: normal; }
+.subline { color: var(--p-fg-2); font-size: var(--p-size-sm); margin-top: 3px; }
+
+.notice { padding: 7px 10px; border-radius: var(--p-radius); font-size: var(--p-size-sm); background: var(--p-raised); }
+.notice.warn { color: var(--p-warn); }
+.notice.bad { color: var(--p-bad); }
+.notice strong { font-weight: var(--p-medium); }
+
+/* ---------------------------------------------------------------- layout */
+.split { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; }
+.sidebar { border-bottom: 1px solid var(--p-line); padding: 6px 8px 10px; min-width: 0; }
+@container (min-width: 680px) {
+  .split { grid-template-columns: 250px minmax(0, 1fr); align-content: stretch; }
+  .sidebar { border-bottom: 0; border-right: 1px solid var(--p-line); }
+}
+.detail { display: grid; gap: 18px; align-content: start; padding: 16px 20px 32px; min-width: 0; max-width: 1080px; }
+
+.detail-head { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.detail-head h2 { font-size: calc(var(--p-size) + 3px); font-weight: var(--p-semibold); line-height: 1.3; overflow-wrap: anywhere; }
+.detail-head .grow { min-width: 200px; }
+.head-actions { display: grid; gap: 4px; justify-items: end; max-width: 46ch; }
+.head-actions .reason { text-align: right; }
+
+.facts-row { display: flex; flex-wrap: wrap; gap: 8px 28px; padding-bottom: 14px; border-bottom: 1px solid var(--p-line); }
+.facts-row div { min-width: 0; }
+.facts-row dt { font-size: var(--p-size-sm); color: var(--p-fg-3); }
+.facts-row dd { margin: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.section { display: grid; gap: 6px; min-width: 0; }
+.section-head { display: flex; align-items: baseline; gap: 10px; }
+.section-head h3 { font-size: var(--p-size); font-weight: var(--p-semibold); }
+.section-head .aside { color: var(--p-fg-3); font-size: var(--p-size-sm); }
+
+/* ---------------------------------------------------------------- tree */
+.group { display: flex; align-items: baseline; gap: 8px; padding: 10px 8px 4px; font-size: var(--p-size-sm); font-weight: var(--p-medium); color: var(--p-fg-3); }
+.group-aside { margin-left: auto; font-weight: normal; }
+.pad { padding: 2px 8px; }
+.row {
+  width: 100%; display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  text-align: left; border: 0; background: transparent; padding: 5px 8px; border-radius: 6px; cursor: var(--cursor-interaction, pointer);
+}
+.row:hover { background: var(--p-hover); }
+.row[aria-pressed="true"] { background: var(--p-selected); }
+.row-text { display: grid; min-width: 0; }
+.row-text .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .title { font-weight: var(--p-medium); }
+.row-text .meta { font-size: var(--p-size-sm); color: var(--p-fg-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-text .meta.wrap { white-space: normal; overflow-wrap: anywhere; }
+.row .aside { font-size: var(--p-size-sm); color: var(--p-fg-3); }
+.children { margin: 0 0 2px 10px; padding-left: 10px; border-left: 1px solid var(--p-line); }
+.leaf { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 10px; align-items: center; padding: 3px 8px; font-size: var(--p-size-sm); }
+.leaf .meta { color: var(--p-fg-3); }
+
+.launch { margin-top: 6px; padding-top: 4px; border-top: 1px solid var(--p-line); }
+.profile { display: grid; gap: 4px; padding: 4px 8px 6px; }
+.profile-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.profile-head .title { font-weight: var(--p-medium); }
+.gate { display: flex; gap: 6px; align-items: center; font-size: var(--p-size-sm); color: var(--p-fg-2); }
+.reasons { list-style: none; display: grid; gap: 2px; }
+
+/* ---------------------------------------------------------------- lists */
+.list { list-style: none; }
+.item { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 10px; align-items: center; padding: 5px 0; border-top: 1px solid var(--p-line); }
+.item:first-child { border-top: 0; }
+.activity li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-top: 1px solid var(--p-line); }
+.activity li:first-child { border-top: 0; }
+.activity time { white-space: nowrap; color: var(--p-fg-3); font-size: var(--p-size-sm); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.activity span { overflow-wrap: anywhere; }
+.bullets { padding-left: 18px; color: var(--p-fg-2); }
+.bullets li { padding: 1px 0; }
+.bullets li::marker { color: var(--p-fg-3); }
+
+/* ---------------------------------------------------------------- disclosure */
+.disclosure { border-top: 1px solid var(--p-line); padding-top: 8px; }
+.disclosure summary {
+  display: inline-flex; align-items: center; gap: 6px; list-style: none; cursor: var(--cursor-interaction, pointer);
+  color: var(--p-fg-2); font-size: var(--p-size-sm); font-weight: var(--p-medium); padding: 2px 0;
+}
+.disclosure summary::-webkit-details-marker { display: none; }
+.disclosure summary::before { content: ""; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); margin-right: 2px; transition: transform 0.12s; }
+.disclosure[open] summary::before { transform: rotate(45deg) translate(-1px, -1px); }
+.disclosure summary:hover { color: var(--p-fg); }
+.disclosure-body { padding: 8px 0 2px; }
+.notes { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; font-size: var(--p-size-sm); }
+.notes div { display: contents; }
+.notes dt { color: var(--p-fg-3); }
+.notes dd { margin: 0; color: var(--p-fg-2); overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- review */
+.review { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 16px; border-bottom: 1px solid var(--p-line); }
+.subtabs { display: flex; gap: 2px; flex-wrap: wrap; min-width: 0; }
+.subtab, .toggle button {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 9px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--p-fg-2); font-size: var(--p-size-sm); font-weight: var(--p-medium); cursor: var(--cursor-interaction, pointer); white-space: nowrap;
+}
+.subtab:hover, .toggle button:hover { color: var(--p-fg); background: var(--p-hover); }
+.subtab[aria-selected="true"], .toggle button[aria-pressed="true"] { color: var(--p-fg); background: var(--p-selected); }
+.toggle { display: inline-flex; gap: 2px; }
+
+.evidence { min-width: 0; }
+.compare { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 700px) { .compare.side { grid-template-columns: 1fr 1fr; } }
+figure { min-width: 0; display: grid; gap: 5px; }
+figcaption { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; font-size: var(--p-size-sm); color: var(--p-fg-3); min-width: 0; }
+figcaption .label { color: var(--p-fg-2); font-weight: var(--p-medium); }
+figcaption .file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.frame {
+  position: relative; border-radius: var(--p-radius); border: 1px solid var(--p-line); background: var(--p-raised);
+  min-height: 140px; display: grid; place-items: center; overflow: hidden;
+}
+.frame img { display: block; width: 100%; height: auto; }
+.frame .placeholder { padding: 24px 16px; text-align: center; color: var(--p-fg-3); font-size: var(--p-size-sm); max-width: 36ch; }
+.overlay img + img { position: absolute; inset: 0; }
+.slider { display: flex; align-items: center; gap: 10px; font-size: var(--p-size-sm); color: var(--p-fg-3); margin-top: 8px; }
+.slider input { flex: 1; accent-color: var(--p-fg); }
+
+.composer { border: 1px solid var(--p-line-strong); border-radius: var(--p-radius-lg); background: var(--p-raised); }
+.composer:focus-within { border-color: var(--p-ring); box-shadow: 0 0 0 1px var(--p-ring); }
+.composer textarea {
+  display: block; width: 100%; min-height: 64px; resize: vertical; padding: 10px 12px 4px; border: 0; background: transparent;
+  line-height: 1.45; border-radius: var(--p-radius-lg) var(--p-radius-lg) 0 0;
+}
+.composer textarea:focus-visible { outline: none; }
+.composer textarea::placeholder { color: var(--p-fg-3); }
+.composer.disabled textarea { cursor: default; }
+.composer-foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px 8px 12px; }
+.composer-note { color: var(--p-fg-3); font-size: var(--p-size-sm); }
+
+.history li { display: grid; grid-template-columns: 6px minmax(0, 1fr); gap: 10px; padding: 6px 0; border-top: 1px solid var(--p-line); }
+.history li:first-child { border-top: 0; }
+.history .dot { margin-top: 7px; }
+.history strong { font-weight: var(--p-medium); }
+.history .who { color: var(--p-fg-3); font-size: var(--p-size-sm); }
+.history .text { margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--p-fg-2); }
+.history .stale { opacity: 0.6; }
+
+/* ---------------------------------------------------------------- usage */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: right; font-weight: var(--p-medium); color: var(--p-fg-3); font-size: var(--p-size-sm); padding: 5px 10px; border-bottom: 1px solid var(--p-line); white-space: nowrap; }
+td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--p-line); font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+th:last-child, td:last-child { padding-right: 0; }
+tr:last-child td { border-bottom: 0; }
+.routes th, .routes td { text-align: left; }
+.routes td { white-space: normal; }
+.mono { font-family: var(--p-mono); font-size: var(--p-size-sm); color: var(--p-fg-2); overflow-wrap: anywhere; }
+.foot { font-size: var(--p-size-sm); color: var(--p-fg-2); }
+
+/* ---------------------------------------------------------------- states */
+.empty { padding: 48px 20px; color: var(--p-fg-2); text-align: center; display: grid; gap: 6px; justify-items: center; }
+.empty h2 { font-size: calc(var(--p-size) + 1px); color: var(--p-fg); font-weight: var(--p-semibold); }
+.empty p { max-width: 52ch; }
+.empty .actions { margin-top: 10px; }
+.loading { padding: 16px 20px; display: grid; gap: 10px; }
+.skeleton { height: 10px; border-radius: 5px; background: var(--p-selected); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); max-width: min(520px, calc(100vw - 32px));
+  padding: 8px 12px; border-radius: var(--p-radius); background: var(--p-fg); color: var(--p-inverse); font-size: var(--p-size-sm);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 18%); z-index: 10;
+}
+.toast.bad { background: var(--p-bad); color: #fff; }
+
+dialog {
+  border: 1px solid var(--p-line-strong); border-radius: var(--p-radius-lg); padding: 0; width: min(480px, calc(100vw - 32px));
+  background: var(--p-bg); color: var(--p-fg); box-shadow: 0 16px 48px rgb(0 0 0 / 28%);
+}
+dialog::backdrop { background: rgb(0 0 0 / 40%); }
+.dialog-body { padding: 16px 18px 4px; }
+.dialog-body h2 { margin-bottom: 8px; font-size: calc(var(--p-size) + 2px); font-weight: var(--p-semibold); }
+.dialog-foot { display: flex; justify-content: flex-end; gap: 6px; padding: 12px 18px 16px; }
+.facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 14px; margin: 12px 0; font-size: var(--p-size-sm); }
+.facts dt { color: var(--p-fg-3); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.callout { padding: 8px 10px; border-radius: var(--p-radius); background: var(--p-raised); color: var(--p-fg-2); font-size: var(--p-size-sm); }
+.callout.message { margin: 10px 0 4px; color: var(--p-fg); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- host context
+   Set from the MCP Apps host context (host.mjs); absent in the localhost
+   fallback, where these rules do nothing. */
+.titlebar .display-mode { align-self: center; margin-left: 2px; }
+.tree-toggle { margin: 6px 4px 0; }
+/* Inline in the conversation the host sizes the frame to the content, so the
+   shell must not claim the viewport height. */
+:root[data-display-mode="inline"] #app,
+:root[data-display-mode="inline"] .shell { min-height: 0; }
+.shell { padding: var(--p-safe-top, 0) var(--p-safe-right, 0) var(--p-safe-bottom, 0) var(--p-safe-left, 0); }
+
+@container (max-width: 520px) {
+  .topbar { padding: 0 12px; }
+  .strip, .toolbar { padding-left: 12px; padding-right: 12px; }
+  .detail { padding: 14px 12px 28px; gap: 16px; }
+  .head-actions { justify-items: start; }
+  .head-actions .reason { text-align: left; }
+  .facts-row { gap: 6px 18px; }
+  .activity li { grid-template-columns: 60px minmax(0, 1fr); }
+  .titlebar .sub { display: none; }
+}
+
+/* Workspace layout. Inherit host typography and surfaces; use hierarchy,
+   spacing and connected handoffs instead of a second application chrome. */
+:root {
+  --p-size: var(--font-text-sm-size, 13px);
+  --p-fg-3: var(--color-text-tertiary, light-dark(#71757b, #a1a1a6));
+  --p-canvas: color-mix(in srgb, var(--p-fg) 2%, var(--p-bg));
+}
+.icon { width: 17px; height: 17px; flex: none; }
+.topbar { padding: 0 24px; }
+.titlebar { min-height: 61px; padding-top: 0; align-items: center; gap: 10px; }
+.titlebar h1 { font-size: 14px; letter-spacing: -.2px; }
+.brand-mark { width: 29px; height: 29px; display: grid; place-items: center; border: 1px solid var(--p-line-strong); border-radius: 8px; }
+.brand-mark .icon { width: 16px; }
+.titlebar .sub { padding-left: 11px; margin-left: 3px; border-left: 1px solid var(--p-line-strong); }
+.tabs { gap: 25px; margin-top: 0; }
+.tab { padding: 6px 0 13px; }
+.tab[aria-selected="true"]::after { height: 2px; }
+.conn { font-size: 11px; }
+.conn.live::before { background: var(--p-ok); }
+.strip { padding: 8px 24px; background: var(--p-canvas); font-size: 11px; gap: 16px; }
+.strip strong { font-weight: 600; }
+.button { height: 34px; border-radius: 8px; transition: background .15s; }
+.button.small { height: 29px; }
+.build-workspace { flex: 1; display: flex; flex-direction: column; }
+.build-progress { display: flex; align-items: center; gap: 24px; padding: 22px 26px; border-bottom: 1px solid var(--p-line); }
+.phase-track { display: flex; gap: 18px; flex: 1; min-width: 0; }
+.phase-step { flex: 1; max-width: 245px; position: relative; display: flex; align-items: center; gap: 11px; padding: 6px 10px; text-align: left; background: none; border: 0; border-radius: 8px; cursor: var(--cursor-interaction, pointer); min-width: 0; }
+.phase-step:hover { background: var(--p-hover); }
+.phase-step::after { content: ''; height: 1px; background: var(--p-line-strong); width: 20px; position: absolute; right: -20px; }
+.phase-step:last-child::after { display: none; }
+.phase-symbol { width: 32px; height: 32px; border: 1px solid var(--p-line-strong); border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 11px; color: var(--p-fg-2); }
+.phase-step.running .phase-symbol { background: var(--p-fg); color: var(--p-inverse); border-color: var(--p-fg); }
+.phase-step.completed .phase-symbol { color: var(--p-ok); }
+.phase-step.failed .phase-symbol { color: var(--p-bad); }
+.phase-step .title { font-weight: 550; }
+.phase-step .meta { margin-top: 3px; font-size: 11px; }
+.attention-link { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--p-line-strong); border-radius: 9px; background: var(--p-bg); text-align: left; cursor: var(--cursor-interaction, pointer); }
+.attention-link:hover { background: var(--p-hover); }
+.attention-link > span { display: grid; gap: 2px; }
+.attention-link strong { font-size: 12px; font-weight: 550; }
+.attention-link span span { font-size: 11px; color: var(--p-fg-2); }
+.attention-link > .icon:first-child { color: var(--p-warn); }
+.sidebar { background: var(--p-canvas); padding: 20px 12px; }
+.sidebar-caption { padding: 0 8px 16px; font-weight: 550; font-size: 12px; color: var(--p-fg-2); }
+.group { font-size: 11px; padding: 10px 8px 8px; }
+.row { padding: 11px 9px; gap: 8px; border: 1px solid transparent; border-radius: 8px; grid-template-columns: 6px minmax(0,1fr); }
+.row[aria-pressed="true"] { background: var(--p-bg); border-color: var(--p-line-strong); box-shadow: 0 1px 2px rgb(0 0 0 / 3%); }
+.row .title { font-size: 12px; }
+.row .meta { font-size: 10px; margin-top: 4px; }
+.row .aside { display: none; }
+.children { margin: 7px 0 14px 12px; }
+.leaf { padding: 6px; gap: 8px; }
+.leaf .meta { font-size: 10px; margin-top: 2px; }
+.launch { margin-top: 28px; }
+.profile-head { flex-wrap: wrap; }
+.profile .meta { white-space: normal; overflow-wrap: anywhere; font-size: 10px; }
+.gate { align-items: start; line-height: 1.6; font-size: 11px; }
+.gate .dot { margin-top: 6px; }
+.profile .reasons { margin-top: 5px; }
+.detail { padding: 32px; gap: 25px; max-width: none; }
+.detail-head { align-items: center; gap: 16px; }
+.detail-head h2 { font-size: clamp(20px, 2.8cqw, 28px); font-weight: 550; letter-spacing: -.8px; }
+.subline { margin-top: 9px; font-size: 11px; }
+.head-actions .reason { max-width: 240px; font-size: 10px; margin-top: 4px; }
+.metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); padding: 20px 0; border-top: 1px solid var(--p-line); border-bottom: 1px solid var(--p-line); }
+.metric { min-width: 0; padding: 0 20px; border-left: 1px solid var(--p-line); }
+.metric:first-child { padding-left: 0; border: 0; }
+.metric-label { color: var(--p-fg-2); display: flex; gap: 7px; align-items: center; font-size: 11px; }
+.metric-label .icon { width: 14px; height: 14px; }
+.metric-value { font-size: clamp(21px, 3cqw, 30px); font-weight: 450; letter-spacing: -1px; margin: 8px 0 3px; }
+.metric-value .unknown { font-size: 16px; letter-spacing: -.2px; font-style: normal; }
+.metric-note { font-size: 10px; color: var(--p-fg-3); }
+.section { gap: 13px; }
+.section-head { justify-content: space-between; }
+.section-head h3 { font-size: 12px; font-weight: 600; }
+.section-head .aside { font-size: 10px; }
+.agent-flow { display: flex; align-items: center; gap: 10px; }
+.agent-node { padding: 16px; flex: 1; min-width: 0; border: 1px solid var(--p-line-strong); border-radius: 10px; }
+.agent-node.working { border-color: color-mix(in srgb,var(--p-fg) 32%,var(--p-bg)); }
+.agent-role { font-size: 10px; color: var(--p-fg-2); margin-bottom: 13px; }
+.agent-model { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.agent-model strong { font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
+.model-avatar { width: 28px; height: 28px; display: grid; place-items: center; background: var(--p-raised); border-radius: 7px; font-weight: 600; font-size: 12px; flex: none; }
+.agent-caption { font-size: 10px; color: var(--p-fg-2); margin-top: 12px; overflow-wrap: anywhere; }
+.flow-arrow { width: 17px; color: var(--p-fg-3); }
+.handoff-note { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--p-fg-2); }
+.handoff-note .icon { width: 13px; height: 13px; }
+.facts-row { gap: 10px 24px; padding-bottom: 22px; }
+.facts-row dt { font-size: 10px; }
+.facts-row dd { margin-top: 4px; font-size: 11px; }
+.activity-filters { width: fit-content; padding: 3px; border-radius: 8px; background: var(--p-canvas); border: 1px solid var(--p-line); }
+.activity-filters button { height: 25px; font-size: 11px; }
+.activity-filters button[aria-pressed="true"] { background: var(--p-bg); box-shadow: 0 1px 3px rgb(0 0 0 / 8%); }
+.activity li { grid-template-columns: 64px 24px minmax(0,1fr); align-items: start; padding: 11px 0; border: 0; position: relative; gap: 8px; }
+.activity li::before { content: ''; position: absolute; width: 1px; background: var(--p-line); left: 83px; top: 32px; bottom: -7px; }
+.activity li:last-child::before { display: none; }
+.event-mark { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--p-line); border-radius: 6px; }
+.event-mark .icon { width: 12px; height: 12px; color: var(--p-fg-2); }
+.activity time { padding-top: 4px; font-size: 10px; }
+.event-text { padding-top: 3px; font-size: 12px; }
+.load-events { justify-self: start; }
+.review .detail { max-width: 1200px; width: 100%; margin: auto; }
+.toolbar { min-height: 56px; padding: 12px 24px; background: var(--p-canvas); }
+.composer { border-radius: 12px; }
+.composer textarea { padding: 16px; }
+.usage { width: 100%; max-width: 1300px; margin: 0 auto; gap: 36px; }
+th { padding: 12px; font-size: 10px; }
+td { padding: 17px 12px; font-size: 12px; }
+.table-wrap { padding: 0 16px; border: 1px solid var(--p-line-strong); border-radius: 10px; }
+.foot { line-height: 1.7; font-size: 11px; }
+.welcome { width: min(760px,100%); margin: auto; padding: 70px 36px 50px; text-align: center; }
+.welcome-symbol { width: 58px; height: 58px; border: 1px solid var(--p-line-strong); border-radius: 17px; display: grid; place-items: center; margin: 0 auto 24px; box-shadow: 0 3px 10px rgb(0 0 0 / 3%); }
+.welcome-symbol .icon { width: 26px; height: 26px; }
+.welcome-label { font-size: 12px; color: var(--p-fg-2); margin-bottom: 10px; }
+.welcome h2 { font-size: clamp(28px,5cqw,40px); font-weight: 500; letter-spacing: -1.5px; line-height: 1.15; }
+.welcome-copy { max-width: 420px; font-size: 14px; color: var(--p-fg-2); line-height: 1.8; margin: 18px auto 25px; }
+.welcome-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+.welcome-actions .button { height: 39px; }
+.welcome-actions .icon { width: 14px; }
+.welcome-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 30px; margin-top: 62px; text-align: left; }
+.step-number { font-family: var(--p-mono); font-size: 11px; color: var(--p-fg-3); }
+.welcome-steps h3 { font-size: 12px; font-weight: 550; margin: 10px 0 7px; }
+.welcome-steps p { font-size: 11px; color: var(--p-fg-2); line-height: 1.7; }
+.setup-note { display: flex; gap: 12px; text-align: left; border-top: 1px solid var(--p-line); margin-top: 36px; padding-top: 22px; }
+.setup-note > .icon { color: var(--p-fg-3); margin-top: 2px; }
+.setup-note strong { font-size: 12px; font-weight: 550; }
+.setup-note p { margin: 6px 0; font-size: 11px; color: var(--p-fg-2); line-height: 1.7; }
+.setup-note .disclosure { border: 0; padding-top: 4px; }
+@container (min-width: 900px) { .split { grid-template-columns: 235px minmax(0,1fr); } }
+@container (max-width: 900px) {
+ .build-progress { padding: 15px; gap: 15px; }
+ .detail { padding: 24px; }
+ .phase-track { gap: 8px; }
+ .phase-step::after { display: none; }
+ .agent-flow { gap: 5px; }
+ .agent-node { padding: 12px; }
+ .agent-role, .agent-caption { font-size: 9px; }
+ .agent-model { gap: 6px; }
+ .agent-model strong { font-size: 12px; }
+ .model-avatar { width: 23px; height: 23px; }
+}
+@container (max-width: 679px) {
+ .sidebar { padding: 12px; }
+ .sidebar-caption { display: none; }
+ .tree { display: flex; gap: 8px; overflow-x: auto; padding: 2px; align-items: center; }
+ .tree .group, .tree .children { display: none; }
+ .tree .row { min-width: 170px; width: 200px; flex: none; }
+ .launch { margin-top: 10px; }
+ .launch .profile { margin-top: 6px; }
+ .build-progress { flex-wrap: wrap; }
+ .attention-link { padding: 8px 12px; }
+ .attention-link span span { display: none; }
+ .detail { padding: 22px 18px; }
+ .head-actions { justify-items: start; }
+ .head-actions .reason { text-align: left; }
+ .metric { padding: 0 12px; }
+ .titlebar .sub { display: none; }
+ .topbar { padding: 0 16px; }
+}
+@container (max-width: 440px) {
+ .titlebar .conn { font-size: 0; gap: 0; }
+ .agent-flow { display: grid; grid-template-columns: 1fr; }
+ .agent-node { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+ .agent-role { margin-bottom: 0; }
+ .agent-model { grid-row: 1 / 3; grid-column: 2; }
+ .agent-caption { margin: 0; }
+ .flow-arrow { justify-self: center; transform: rotate(90deg); height: 12px; }
+ .metric-label .icon { display: none; }
+ .metric-note { font-size: 9px; }
+ .metric-label { font-size: 10px; }
+ .metric-value { font-size: 21px; }
+ .welcome { padding: 40px 22px; }
+ .welcome-steps { gap: 16px; margin-top: 35px; }
+ .activity li { grid-template-columns: 48px 24px minmax(0,1fr); }
+ .activity li::before { left: 67px; }
+}
+
+@container (max-width: 520px) {
+ .phase-track { flex-basis: 100%; }
+ .phase-step { max-width: none; }
+ .attention-link { width: 100%; justify-content: start; }
+ .attention-link > .icon:last-child { margin-left: auto; }
+}
+
+/* One project destination, with the project's run history nested inside. */
+.project-tabs{display:flex;gap:6px;padding:12px 24px;border-bottom:1px solid var(--p-line);overflow-x:auto;white-space:nowrap}
+.project-tab{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--p-fg-2);font:inherit;font-size:12px;cursor:pointer}
+.project-tab[aria-pressed=true]{background:var(--p-bg-2);border-color:var(--p-line);color:var(--p-fg)}
+.project-heading{padding:16px 12px 6px;background:none;border:0;color:var(--p-fg);font:inherit;font-size:12px;font-weight:600;text-align:left;cursor:pointer}
+.review-inbox{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:65vh}
+.review-queue{padding:24px 16px;border-right:1px solid var(--p-line);background:var(--p-bg-2)}
+.review-queue h2{font-size:13px;margin-bottom:16px}
+.review-queue .toggle{margin-bottom:16px}
+.question-item{display:flex;flex-direction:column;gap:8px;width:100%;padding:14px 12px;margin:6px 0;border:1px solid transparent;border-radius:9px;background:none;text-align:left;color:var(--p-fg);font:inherit;font-size:12px;cursor:pointer}
+.question-item[aria-pressed=true]{background:var(--p-bg);border-color:var(--p-line-strong)}
+.question-item strong{font-weight:550;line-height:1.5}
+.review-content{max-width:1200px;width:100%;margin:0 auto}
+.review-question{font-size:18px;line-height:1.6;max-width:760px;margin:22px 0;white-space:pre-wrap}
+.review-stage .frame{max-height:none;background:var(--p-bg-2)}
+.review-stage .frame img{display:block;width:100%;max-height:72vh;object-fit:contain}
+.review-stage>figure{margin:0}
+.review-content .composer{margin-top:24px}
+.review-content .composer>.button{align-self:flex-end;margin-top:12px}
+.review-content .composer>.disclosure{width:100%;margin-top:16px}
+@media(max-width:700px){.project-tabs{padding:10px 12px}.review-inbox{grid-template-columns:1fr}.review-queue{border-right:0;border-bottom:1px solid var(--p-line);padding:16px}.question-item{padding:10px}.review-content{padding:20px}.review-question{font-size:16px}}
+.review-content .composer>p{margin:12px 16px 0;line-height:1.6}
+.review-content .composer>.button{margin:0 16px 14px}
+.review-content .composer>.disclosure{padding:0 16px 12px}
+@media(max-width:700px){.review-queue{max-height:250px;overflow-y:auto}.review-queue h2{margin-bottom:10px}.review-queue .toggle{position:sticky;top:0;background:var(--p-bg-2);z-index:1}.question-item{gap:4px;margin:3px 0}}
+
+/* Workspace selection contains the section navigation below it. */
+.shell > .tabs{padding:0 24px;border-bottom:1px solid var(--p-line)}
+@media(max-width:700px){.shell > .tabs{padding:0 12px;gap:20px}}
+
+.replay-controls{position:sticky;top:0;z-index:10;background:var(--p-bg);border-bottom:1px solid var(--p-line-strong);padding:14px 20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.replay-controls input{flex:1;min-width:120px}.replay-controls strong{flex-basis:100%;font-size:12px}.replay-notice{padding:8px 20px;font-size:11px;color:var(--p-fg-2)}.session-card{padding:20px;margin:16px;border:1px solid var(--p-line);border-radius:10px}.session-card h2{font-size:16px}.session-card p,.session-card ul{margin-top:10px}.session-card pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}#session-view>.foot{padding:20px}#coverage{padding:20px;border-top:1px solid var(--p-line)}
+</style><body><div class="replay-controls"><strong id="capture-state"></strong><button id="previous" class="button">Previous</button><button id="play" class="button primary">Play</button><button id="next" class="button">Next</button><input id="position" aria-label="Replay position" type="range" min="0" value="0"><span id="time" class="small"></span><select id="speed" aria-label="Playback speed"><option value="1">1×</option><option value="5">5×</option><option value="20" selected>20×</option><option value="60">60×</option></select><button data-view="panel" aria-pressed="true" class="button">Codex on Crack</button><button data-view="sessions" aria-pressed="false" class="button">Recorded sessions</button><button data-view="checkpoints" aria-pressed="false" class="button">Checkpoints</button></div><p id="gaps" class="replay-notice" role="status"></p><div id="app"></div><div id="session-view" hidden></div><div id="checkpoint-view" hidden></div><p id="coverage" class="foot"></p><script type="application/json" id="recording-data"><!--RECORDING_DATA--></script><script>(()=>{function t(l,c={},...s){let f=document.createElement(l);for(let[r,p]of Object.entries(c??{}))p==null||p===!1||(r==="class"?f.className=p:r==="text"?f.textContent=p:r.startsWith("on")?f.addEventListener(r.slice(2),p):r==="dataset"?Object.assign(f.dataset,p):r==="style"?f.style.cssText=p:f.setAttribute(r,p===!0?"":String(p)));for(let r of s.flat(1/0))r==null||r===!1||f.append(r instanceof Node?r:document.createTextNode(String(r)));return f}var V=new Intl.NumberFormat(void 0);function le(l){return Number.isSafeInteger(l)?l>=1e6?`${(l/1e6).toFixed(l>=1e7?0:1)}M`:l>=1e4?`${(l/1e3).toFixed(l>=1e5?0:1)}k`:V.format(l):null}function M(l){if(!Number.isFinite(l))return null;let c=Math.round(l/1e3);if(c<60)return`${c}s`;let s=Math.floor(c/60);return s<60?`${s}m ${String(c%60).padStart(2,"0")}s`:`${Math.floor(s/60)}h ${String(s%60).padStart(2,"0")}m`}function B(l){let c=Date.parse(l);return Number.isFinite(c)?new Date(c).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"—"}function ce(l){let c=Date.parse(l);if(!Number.isFinite(c))return"";let s=Math.max(0,Math.round((Date.now()-c)/1e3));return s<45?"just now":s<3600?`${Math.round(s/60)} min ago`:s<86400?`${Math.round(s/3600)} h ago`:new Date(c).toLocaleDateString()}var J=l=>typeof l=="number"&&Number.isFinite(l)?`$${l.toFixed(2)}`:null,S=l=>String(l??"").replace(/[-_]/g," ").replace(/^\w/,c=>c.toUpperCase()),T=(l="unknown")=>t("span",{class:"unknown",text:l}),D={idle:["Between turns",""],observed:["Observed",""],completed:["Completed",""],failed:["Failed","bad"],running:["Running","live"],"running-observed":["Running · observed","live"],starting:["Starting","live"],unavailable:["Unavailable","warn"],unreadable:["Unreadable · refused","bad"]},de={feedback_received:["Feedback saved","ok"],awaiting_evidence:["Awaiting evidence",""],ready_for_review:["Ready for your review","live"],changes_requested:["Changes requested","warn"],approved:["Approved","ok"]},Ge={verified:["Verified","ok"],unverified:["Configured · unverified",""],"available-unverified":["Available · unverified",""],unavailable:["Unavailable","bad"],failed:["Failed","bad"],"not-configured":["Not configured",""],"host-only":["Host action only",""],demo:["Demo",""]},ue={"local-ui":"Local panel client (session token)","mcp-app":"Codex app view (host-recorded)","demo-ui":"Demo decision"},Ye={"early-design":"Early design gate",visual:"Visual check",final:"Final acceptance"},Je={solo:"Solo lead","external-lead":"Lead + native worker"},z=new Set(["running","running-observed","starting"]);function O(l="",c=!1){return t("span",{class:`dot ${l} ${c?"pulse":""}`.trim(),"aria-hidden":"true"})}function Ze(l){return O(D[l]?.[1]??"",z.has(l))}function Z(l,c){let[s,f]=l[c]??[S(c),""];return t("span",{class:`status ${f}`.trim()},O(f,l===D&&z.has(c)),s)}function pe(l,...c){return t("div",{class:`line ${l}`.trim()},c.flat().filter(s=>s!=null&&s!==!1&&s!=="").map(s=>s instanceof Node?s:t("span",{text:String(s)})))}function q(l,c,...s){return t("section",{class:"section","aria-label":l},t("div",{class:"section-head"},t("h3",{text:l}),c?t("span",{class:"aside",text:c}):null),...s)}var fe={layers:"M3 7l9-4 9 4-9 4-9-4zm0 5l9 4 9-4M3 17l9 4 9-4",arrow:"M5 12h14m-5-5l5 5-5 5",check:"M5 12l4 4L19 6",clock:"M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",code:"M8 5l-6 7 6 7m8-14l6 7-6 7m-3-15l-2 16",activity:"M2 12h4l3-8 6 16 3-8h4",review:"M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9M8 12l3 3L21 3"};function I(l,c=""){let s=document.createElementNS("http://www.w3.org/2000/svg","svg");for(let[r,p]of Object.entries({viewBox:"0 0 24 24",fill:"none",stroke:"currentColor","stroke-width":"1.5","stroke-linecap":"round","stroke-linejoin":"round","aria-hidden":"true",class:`icon ${c}`}))s.setAttribute(r,p);let f=document.createElementNS(s.namespaceURI,"path");return f.setAttribute("d",fe[l]??fe.layers),s.append(f),s}function me(l){return{"gpt-6-astra":"Astra","gpt-6-sol":"Sol 6","claude-opus-5-5":"Opus 5.5","deepseek/deepseek-v4.1-flash":"Flash 4.1"}[l]??l??"Not reported"}function ge(l,c){let s={snapshot:null,signature:"",view:"overview",runId:null,reviewId:null,projectId:null,reviewFilter:"waiting",compare:"side",overlay:50,connection:"connecting",lastOk:null,error:null,drafts:new Map,images:new Map,imageNodes:new Map,failedImages:new Set,open:new Set,toast:null,timer:null,busy:!1,prefs:{defaultView:"overview",showCompletedRuns:!0,compareMode:"side-by-side"},prefsSeen:!1,showCompleted:null,touched:{view:!1,compare:!1},pendingRoute:null,activityFilter:"all",activityLimit:12},f=c.host??null;function r(n){if(!n||typeof n!="object")return!1;let e={defaultView:["overview","review","usage"].includes(n.defaultView)?n.defaultView:s.prefs.defaultView,showCompletedRuns:typeof n.showCompletedRuns=="boolean"?n.showCompletedRuns:s.prefs.showCompletedRuns,compareMode:["side-by-side","overlay"].includes(n.compareMode)?n.compareMode:s.prefs.compareMode},a=!s.prefsSeen;return s.prefsSeen=!0,a&&!s.touched.view&&(s.view=e.defaultView),JSON.stringify(e)===JSON.stringify(s.prefs)?a:(s.prefs=e,s.touched.compare||(s.compare=e.compareMode==="overlay"?"overlay":"side"),!0)}function p(n){if(!n)return!1;if(!s.snapshot||s.snapshot.provenance==="unconfigured")return s.snapshot||(s.pendingRoute=n),!1;let e=s.snapshot;return n.runId&&!e.runs.some(a=>a.id===n.runId)?(g("The linked run is not registered in this panel."),!1):n.reviewId&&!e.reviews.some(a=>a.id===n.reviewId)?(g("The linked review is not registered in this panel."),!1):(["overview","review","usage"].includes(n.view)&&(s.view=n.view),n.runId&&(s.runId=n.runId,s.projectId=e.runs.find(a=>a.id===n.runId)?.workspaceId??null),n.reviewId&&(s.reviewId=n.reviewId,s.projectId=e.reviews.find(a=>a.id===n.reviewId)?.workspaceId??null,s.reviewFilter="all"),s.touched.view=!0,w(),!0)}function b(){let n=s.pendingRoute;s.pendingRoute=null,n&&p(n)}function h(n,e){n==="run"?(s.runId=e,s.activityLimit=12):s.reviewId=e,w(),f?.canShareContext()&&Promise.resolve().then(()=>f.shareSelection(s.snapshot,{kind:n,id:e})).catch(()=>{})}function g(n,e=""){s.toast={message:n,tone:e},X(),clearTimeout(g.timer),g.timer=setTimeout(()=>{s.toast=null,X()},5200)}function X(){document.querySelector(".toast")?.remove(),s.toast&&document.body.append(t("div",{class:`toast ${s.toast.tone}`,role:"status",text:s.toast.message}))}async function $({force:n=!1}={}){try{let e=await c.state();s.connection="live",s.lastOk=new Date,s.error=null;let a=r(c.preferences?.()),o=JSON.stringify({...e,generatedAt:null});n||a||o!==s.signature?(s.snapshot=e,s.signature=o,w(),b()):ye()}catch(e){s.connection="lost",s.error=e?.message??"Connection lost.",w()}}function ee(){clearTimeout(s.timer),!s.stopped&&(s.timer=setTimeout(async()=>{document.visibilityState!=="hidden"&&await $(),ee()},c.pollMs??2500))}async function E(n,e){if(s.busy)return null;s.busy=!0,w();try{let a=await n();return e&&g(typeof e=="function"?e(a):e),await $({force:!0}),a}catch(a){return g(a?.message??"The action failed.","bad"),a?.code==="stale_evidence"&&await $({force:!0}),null}finally{s.busy=!1,w()}}function w(){let n=document.activeElement,e=n?.dataset?.key??null,a=e&&"selectionStart"in n?[n.selectionStart,n.selectionEnd]:null,o=window.scrollY;if(l.replaceChildren(ke()),e){let i=l.querySelector(`[data-key="${CSS.escape(e)}"]`);i&&(i.focus({preventScroll:!0}),a&&"setSelectionRange"in i&&i.setSelectionRange(...a))}window.scrollTo(0,o),We()}function ye(){let n=l.querySelector(".conn");n&&(n.className=`conn ${s.connection}`,n.textContent=te())}function te(){return c.kind==="replay"?"Recorded · offline":s.connection==="live"?s.snapshot?.provenance==="demo"?c.kind==="mcp"?"Example · Codex":"Example · localhost":c.kind==="mcp"?"Connected via Codex":"Connected · localhost":s.connection==="lost"?"Disconnected":"Connecting…"}function R(n,e,...a){let o=t("details",{class:"disclosure",open:s.open.has(n)},t("summary",{dataset:{key:`details-${n}`},text:e}),t("div",{class:"disclosure-body"},...a));return o.addEventListener("toggle",()=>{o.open?s.open.add(n):s.open.delete(n)}),o}function W(n){return t("dl",{class:"notes"},n.filter(([,e])=>e!=null&&e!=="").map(([e,a])=>t("div",{},t("dt",{text:e}),t("dd",{},a))))}function ke(){let n=s.snapshot,e=t("div",{class:"shell"});return e.append(Ie(n)),s.connection==="lost"&&e.append(t("div",{class:"strip lost",role:"alert"},t("span",{class:"grow"},t("strong",{text:"Disconnected. "}),s.lastOk?`Showing the last state from ${B(s.lastOk.toISOString())}. `:"",s.error??""),t("button",{class:"button small",onclick:()=>$({force:!0})},"Retry"))),n?n.provenance==="unconfigured"?(e.append($e(n)),e):(n.provenance==="demo"&&e.append(t("div",{class:"strip demo"},t("span",{class:"grow"},t("strong",{text:"Demo data. "}),"Explore an example build. No models are running and no usage is charged."),c.useDemo?t("button",{class:"button ghost small",onclick:()=>G(!1)},"Leave demo"):null)),e.append(xe(n)),n=se(n,s.projectId),e.append(Se(n)),s.view==="review"?e.append(_e(n)):s.view==="usage"?e.append(Be(n)):e.append(Ae(n)),e):(e.append(t("div",{class:"loading"},t("p",{class:"muted",text:"Connecting to the panel controller…"}),t("div",{class:"skeleton",style:"width:62%"}),t("div",{class:"skeleton",style:"width:40%"}),t("div",{class:"skeleton",style:"width:54%"}))),e)}function se(n,e){if(!e)return{...n,runs:[],reviews:[],phases:[],profiles:[],routes:[]};let a=n.workspaces.find(i=>i.id===e)?.label,o=n.runs.filter(i=>i.workspaceId===e||!i.workspaceId&&i.workspace===a);return{...n,runs:o,routes:n.workspaceRoutes?.[e]??[],reviews:n.reviews.filter(i=>i.workspaceId===e),phases:n.phases.map(i=>({...i,runs:i.runs.filter(u=>o.some(d=>d.id===u))})).filter(i=>i.runs.length),profiles:n.profiles.filter(i=>i.workspaceId?i.workspaceId===e:i.workspace===e||i.workspace===a)}}function xe(n){return n.workspaces.some(e=>e.id===s.projectId)||(s.projectId=n.runs.find(e=>e.id===s.runId)?.workspaceId??n.reviews.find(e=>e.id===s.reviewId)?.workspaceId??n.workspaces.find(e=>n.runs.some(a=>a.workspaceId===e.id)||n.reviews.some(a=>a.workspaceId===e.id))?.id??n.workspaces[0]?.id??null),t("nav",{class:"project-tabs","aria-label":"Workspaces"},n.workspaces.map(e=>{let a=n.reviews.filter(o=>(!e.id||o.workspaceId===e.id)&&o.state==="ready_for_review").length;return t("button",{class:"project-tab","aria-pressed":String(s.projectId===e.id),dataset:{key:`project-${e.id??"all"}`},onclick:()=>{s.projectId=e.id,s.runId=null,s.reviewId=null,w()}},e.label,a?t("span",{class:"count",text:String(a)}):null)}))}function Ie(n){let e=f?.displayToggle()??null;return t("header",{class:"topbar"},t("div",{class:"titlebar"},t("h1",{text:"Codex on Crack"}),n&&n.provenance!=="unconfigured"?t("span",{class:"sub",text:`${n.workspaces?.length??0} projects`}):null,t("span",{class:"spacer"}),c.useDemo&&n?.provenance!=="demo"&&n?.provenance!=="unconfigured"?t("button",{class:"button ghost small",onclick:()=>G(!0)},"Explore demo"):null,t("span",{class:`conn ${s.connection}`,role:"status",text:te()}),e?t("button",{class:"button ghost small display-mode",dataset:{key:"display-mode"},onclick:()=>f.requestDisplayMode(e.target).then(()=>w(),()=>g("The host kept the current display mode."))},e.label):null))}function Se(n){let e=n?.reviews?.filter(o=>o.state==="ready_for_review").length??0,a=(o,i,u=null)=>t("button",{class:"tab",role:"tab","aria-selected":String(s.view===o),"aria-pressed":String(s.view===o),dataset:{key:`tab-${o}`},onclick:()=>{s.view=o,s.touched.view=!0,w()}},i,u);return t("nav",{class:"tabs",role:"tablist","aria-label":"Workspace views"},a("overview","Overview"),a("review","Review",e?t("span",{class:"count","aria-label":`${e} waiting`,text:String(e)}):null),a("usage","Usage & routes"))}function $e(n){return t("div",{class:"welcome"},t("div",{class:"welcome-symbol"},I("layers")),t("p",{class:"welcome-label",text:"Codex on Crack"}),t("h2",{text:"Your build, in view."}),t("p",{class:"welcome-copy",text:"Follow the plan, see what each model is doing, and review the result. All alongside your conversation."}),t("div",{class:"welcome-actions"},f?.canDiscuss()?t("button",{class:"button primary",onclick:Ce},"Connect this project",I("arrow")):null,c.useDemo?t("button",{class:`button ${f?.canDiscuss()?"":"primary"}`,onclick:()=>G(!0)},"Explore an example",I("arrow")):null,t("button",{class:"button",onclick:()=>$({force:!0})},"Check connection")),t("div",{class:"welcome-steps"},[["01","Plan together","Agree on the work and choose your models."],["02","Follow the handoffs","See the lead, workers, and recorded activity."],["03","Review the result","Compare evidence and give precise feedback."]].map(([e,a,o])=>t("div",{},t("span",{class:"step-number",text:e}),t("h3",{text:a}),t("p",{text:o})))),t("div",{class:"setup-note"},I("code"),t("div",{},t("strong",{text:(n.problems?.length??0)>1?"Reconnect your workspace":"Connect your first project"}),t("p",{text:"Ask in chat: “Connect this project to the build panel.” The example is separate from your real work."}),R("setup-details","Connection details",n.configPath?t("p",{},"Configuration: ",t("code",{text:n.configPath})):null,...(n.problems??[]).map(e=>t("p",{class:"small muted",text:e}))))))}function Ce(){let n="Connect the project in this conversation to the build panel. Preserve existing registrations and keep launching disabled.";P({heading:"Connect this project in chat?",confirm:"Send message",body:[t("p",{class:"muted small",text:"The assistant will check this project and the panel configuration. This sends the following request to your conversation."}),t("div",{class:"callout message",text:n})],onConfirm:()=>E(()=>f.discuss(n),"Sent to the conversation. Refresh after the configuration is ready.")})}async function G(n){await c.useDemo(n),s.runId=null,s.reviewId=null,s.view="overview",await $({force:!0})}let Y=()=>s.showCompleted??s.prefs.showCompletedRuns,Re=n=>n.runs.filter(e=>Y()||e.state!=="completed"||e.id===s.runId);function Ae(n){if(!s.runId||!n.runs.some(o=>o.id===s.runId)){let o=Y()?n.runs:n.runs.filter(i=>i.state!=="completed");s.runId=o.find(i=>i.state.startsWith("running"))?.id??o[0]?.id??n.runs[0]?.id??null}let e=n.runs.find(o=>o.id===s.runId)??null,a=t("div",{class:"detail"});return e?a.append(...Me(n,e)):a.append(t("div",{class:"empty"},t("h2",{text:"No runs yet"}),t("p",{text:"Register a run directory in the panel configuration, or launch a registered profile once its gate is approved."}))),t("div",{class:"build-workspace"},Te(n),t("div",{class:"split"},t("aside",{class:"sidebar"},t("div",{class:"sidebar-caption",text:"Build outline"}),Ee(n),Ne(n)),a))}function Te(n){let e=n.phases.map(o=>{let i=n.runs.filter(d=>o.runs.includes(d.id)),u=i.some(d=>["failed","unreadable"].includes(d.state))?"failed":i.some(d=>z.has(d.state))?"running":i.length&&i.every(d=>d.state==="completed")?"completed":i.some(d=>d.state==="idle")?"idle":i.some(d=>d.state==="observed")?"observed":"unavailable";return{phase:o,runs:i,state:u}}),a=n.reviews.filter(o=>o.state==="ready_for_review");return t("section",{class:"build-progress","aria-label":"Build progress"},t("div",{class:"phase-track"},e.map(({phase:o,runs:i,state:u},d)=>t("button",{class:`phase-step ${u}`,"aria-pressed":String(i.some(m=>m.id===s.runId)),dataset:{key:`phase-${d}`},onclick:()=>{i[0]&&h("run",i[0].id)}},t("span",{class:"phase-symbol"},u==="completed"?I("check"):String(d+1).padStart(2,"0")),t("span",{class:"row-text"},t("span",{class:"title",text:S(o.name)}),t("span",{class:"meta",text:D[u]?.[0]??S(u)}))))),a.length?t("button",{class:"attention-link",onclick:()=>{s.view="review",s.touched.view=!0,h("review",a[0].id)}},I("review"),t("span",{},t("strong",{text:`${a.length} review${a.length===1?"":"s"} ready`}),t("span",{text:"Your feedback is next"})),I("arrow")):null)}function Ee(n){return s.projectId||n.workspaces.length<2?ne(n):t("div",{class:"project-tree"},n.workspaces.map(e=>{let a=se(n,e.id);return a.runs.length?t("section",{},t("button",{class:"project-heading",onclick:()=>{s.projectId=e.id,s.runId=null,w()}},e.label),ne(a)):null}))}function ne(n){let e=t("nav",{class:"tree","aria-label":"Phases and agents"});if(!n.runs.length)return e.append(t("div",{class:"group",text:"Runs"}),t("p",{class:"muted small pad",text:"Nothing registered."})),e;let a=new Set(Re(n).map(u=>u.id)),o=n.runs.length-a.size;for(let u of n.phases)if(u.runs.some(d=>a.has(d))){e.append(t("div",{class:"group",text:u.name==="unphased"?"Other runs":S(u.name)}));for(let d of u.runs){let m=n.runs.find(C=>C.id===d);if(!m||!a.has(m.id))continue;e.append(t("button",{class:"row","aria-pressed":String(s.runId===m.id),dataset:{key:`run-${m.id}`},onclick:()=>h("run",m.id)},Ze(m.state),t("span",{class:"row-text"},t("span",{class:"title",text:m.label}),t("span",{class:"meta",text:[m.model??"model unknown",D[m.state]?.[0]??S(m.state)].join(" · ")})),t("span",{class:"aside num",text:M(m.timing.elapsedMs)??""})));let A=[];for(let C of m.workers)A.push(t("div",{class:"leaf"},O(),t("span",{class:"row-text"},t("span",{class:"title",text:`Worker · ${C.id}`}),t("span",{class:"meta",text:`${C.model} · ${C.status} · recorded result`}))));for(let C of m.hostRequests)A.push(t("div",{class:"leaf"},O("hollow"),t("span",{class:"row-text"},t("span",{class:"title",text:S(C.action)}),t("span",{class:"meta",text:"Host request · not executed by the panel"}))));A.length&&e.append(t("div",{class:"children"},A))}}let i=n.runs.filter(u=>u.state==="completed").length;return(o>0||i>0&&s.showCompleted===!0&&!s.prefs.showCompletedRuns)&&e.append(t("button",{class:"button ghost small tree-toggle",dataset:{key:"toggle-completed"},onclick:()=>{s.showCompleted=!Y(),w()}},o>0?`Show ${o} completed`:"Hide completed")),e}function Ne(n){if(!n.profiles.length)return null;let e=t("section",{class:"launch","aria-label":"Launch"},t("div",{class:"group"},"Launch",t("span",{class:"group-aside",text:n.launchEnabled?"Enabled":"Off"})));for(let a of n.profiles){let o=a.gate;e.append(t("div",{class:"profile"},t("div",{class:"profile-head"},t("span",{class:"row-text"},t("span",{class:"title",text:a.label}),t("span",{class:"meta",text:`${a.model} · ${a.mode} · ${a.toolProfile} tools`})),t("button",{class:"button primary small",disabled:!a.launch.allowed||s.busy,onclick:()=>Ve(a.id)},"Launch…")),o.reviewId?t("p",{class:`gate ${o.satisfied?"":"warn"}`.trim()},O(o.satisfied?"ok":"warn"),`${o.satisfied?"Gate approved":"Waiting on gate"} · ${o.title} · ${o.enforcement==="controller-enforced"?"controller-enforced":o.enforcement??"gate"}`):null,a.launch.reasons.length?t("ul",{class:"reasons"},a.launch.reasons.map(i=>t("li",{class:"reason",text:i}))):null))}return e}function Me(n,e){let a=e.usage.models,o=e.origin==="controller"?e.owned?"Started by this panel":"Started by the panel earlier":"Observed only",i=[t("header",{class:"detail-head","aria-label":"Selected run"},t("div",{class:"grow"},t("h2",{text:e.label}),pe("subline",Z(D,e.state),e.model??T("model unknown"),e.phase?`${S(e.phase)} phase`:null,e.failureKind?t("span",{class:"status bad",text:e.failureKind.replaceAll("_"," ")}):null)),Oe(e)),qe(e),e.kind==="session"?null:De(n,e),t("dl",{class:"facts-row"},F("Origin",o),e.mode?F("Mode",Je[e.mode]??e.mode):null,e.toolProfile?F("Tools",e.toolProfile):null,F("API-active time",M(e.timing.activeMs)??T("not reported")),F("Started",e.startedAt?`${B(e.startedAt)} · ${ce(e.startedAt)}`:T()))];e.errors.length&&i.push(t("div",{class:"notice bad",role:"status"},t("strong",{text:"Run reported problems: "}),e.errors.join(" · "))),e.plan?.length&&i.push(q("Plan","Recorded steps",t("ul",{class:"list"},e.plan.map(m=>t("li",{},`${m.status}: ${m.step}`))))),i.push(je(e));let u=e.actions.cancel,d=e.actions.resume;return i.push(R(`run-${e.id}`,"Details",W([["Run",t("code",{text:e.id})],["Workspace",e.workspace],["Origin",e.origin==="controller"?"Started through this panel’s controller.":"Observed from its registered run directory; the panel did not start it."],["Elapsed",e.timing.elapsedBasis],["Active",e.timing.activeMs===null&&e.timing.activeBasis==="not reported"?"Not reported by the CLI.":e.timing.activeBasis],["Tokens",a.length?["Input includes cache reads and writes.",e.usage.note].filter(Boolean).join(" "):"Not recorded. Nothing is estimated."],["Billing",e.usage.billing],["Cancel",u.allowed?"Available":u.reason],["Resume",d.allowed?"Available: resumes into a new run directory.":d.reason],oe("run")].filter(Boolean)))),i.filter(Boolean)}function qe(n){let e=n.usage.models,a=e.length&&e.every(u=>Number.isSafeInteger(u.outputTokens))?e.reduce((u,d)=>u+d.outputTokens,0):null,o=n.activity.filter(u=>u.type==="tool.finished").length,i=(u,d,m,A)=>t("div",{class:"metric"},t("div",{class:"metric-label"},I(A),u),t("div",{class:"metric-value num"},d??T("Not reported")),t("p",{class:"metric-note",text:m}));return t("div",{class:"metrics","aria-label":"Selected run metrics"},i("Elapsed time",M(n.timing.elapsedMs),n.kind==="session"?"Recorded span, including waits":"Wall clock for this run","clock"),i("Output tokens",le(a),"Reported session counter","code"),i("Tool completions",String(o),"In the recorded activity","activity"))}function De(n,e){let a=n.routes.find(d=>d.role==="host"),o=(d,m,A,C="")=>t("div",{class:`agent-node ${C}`},t("div",{class:"agent-role",text:d}),t("div",{class:"agent-model"},t("span",{class:"model-avatar",text:me(m).slice(0,1)}),t("strong",{text:me(m)})),t("p",{class:"agent-caption",text:A})),i=[o("Coordinates",a?.model,"Codex host · configured")];i.push(o(e.mode==="external-lead"?"Plans & reviews":"Implements",e.model,D[e.state]?.[0]??S(e.state),z.has(e.state)?"working":""));for(let d of e.workers)i.push(o("Implementation result",d.model,S(d.status)+" · recorded"));let u=t("div",{class:"agent-flow"},i.flatMap((d,m)=>m?[I("arrow","flow-arrow"),d]:[d]));return q("Model handoffs","Selected run",u,e.hostRequests.length?t("div",{class:"handoff-note"},I("layers"),t("span",{text:`${e.hostRequests.length} host request${e.hostRequests.length===1?"":"s"} recorded. Execution is handled by Codex, not the panel.`})):null)}function F(n,e){return t("div",{},t("dt",{text:n}),t("dd",{},e))}function Oe(n){let e=t("div",{class:"head-actions"}),a=n.actions.cancel,o=n.actions.resume;e.append(t("div",{class:"actions"},ae("run",n.id),t("button",{class:"button small",disabled:!a.allowed||s.busy,title:a.reason??"Stop this run",onclick:()=>Ke(n)},"Cancel"),t("button",{class:"button small",disabled:!o.allowed||s.busy,title:o.reason??"Resume into a new run directory",onclick:()=>ze(n)},"Resume…")));let i=!a.allowed&&!o.allowed&&a.reason===o.reason?a.reason:[a.allowed?null:a.reason,o.allowed?null:o.reason].filter(Boolean)[0];return i&&e.append(t("p",{class:"reason",text:i})),e}function ae(n,e){return f?.canDiscuss()?t("button",{class:"button ghost small",disabled:s.busy,dataset:{key:`discuss-${n}-${e}`},title:"Preview a short factual message about this selection, then send it to the conversation",onclick:()=>He(n,e)},"Discuss in chat…"):null}function oe(n){return f?.canShareContext()?["Conversation",`Selecting this ${n} shares its id, label, state, model or gate, timing, and counts with the conversation. Transcripts, activity, logs, evidence, and paths are not shared.`]:null}function je(n){let e=n.activity.filter(o=>s.activityFilter==="all"||(s.activityFilter==="tools"?o.type.startsWith("tool."):!o.type.startsWith("tool."))),a=t("div",{class:"toggle activity-filters",role:"group","aria-label":"Filter activity"},[["all","All activity"],["tools","Tools"],["lifecycle","Lifecycle"]].map(([o,i])=>t("button",{"aria-pressed":String(s.activityFilter===o),dataset:{key:`activity-${o}`},onclick:()=>{s.activityFilter=o,s.activityLimit=12,w()}},i)));return q("Activity","Recorded events",a,e.length?t("ul",{class:"list activity"},e.slice(0,s.activityLimit).map(o=>t("li",{},t("time",{datetime:o.at,text:B(o.at)}),t("span",{class:"event-mark"},I(o.type.startsWith("tool.")?"code":"activity")),t("span",{class:"event-text",text:o.text})))):t("p",{class:"muted small",text:"No activity recorded for this filter."}),e.length>s.activityLimit?t("button",{class:"button ghost small load-events",onclick:()=>{s.activityLimit+=30,w()}},`Show more · ${e.length-s.activityLimit} remaining`):null)}function _e(n){if(!n.reviews.length)return t("div",{class:"empty"},t("h2",{text:"No reviews registered"}),t("p",{text:"The agent can post visual questions here. Your replies are saved for its next checkpoint without interrupting the conversation."}));(!s.reviewId||!n.reviews.some(d=>d.id===s.reviewId))&&(s.reviewId=(n.reviews.find(d=>d.state==="ready_for_review")??n.reviews[0]).id);let e=n.reviews.find(d=>d.id===s.reviewId),a=d=>["ready_for_review","awaiting_evidence"].includes(d.state),o=s.reviewFilter==="waiting"?n.reviews.filter(a):n.reviews,i=n.reviews.find(d=>d.id===s.reviewId),u=o.some(d=>d.id===s.reviewId)||!i?o:[i,...o];return t("div",{class:"review review-inbox"},t("aside",{class:"review-queue"},t("h2",{text:"Visual questions"}),t("div",{class:"toggle","aria-label":"Question filter"},["waiting","all"].map(d=>t("button",{"aria-pressed":String(s.reviewFilter===d),onclick:()=>{s.reviewFilter=d,s.reviewId=null,w()}},d==="waiting"?"Needs you":"All"))),u.map(d=>t("button",{class:"question-item","aria-pressed":String(d.id===s.reviewId),dataset:{key:`review-${d.id}`},onclick:()=>h("review",d.id)},t("span",{class:"small muted",text:n.workspaces.find(m=>m.id===d.workspaceId)?.label??"Project"}),t("strong",{text:d.title}),t("span",{class:"small",text:de[d.state]?.[0]??S(d.state)}))),o.length?null:t("p",{class:"small muted",text:"No questions waiting for feedback."})),t("div",{class:"detail review-content"},...Le(n,e)))}function Le(n,e){let a=e.revision,o=[t("header",{class:"detail-head","aria-label":`Review ${e.title}`},t("div",{class:"grow"},t("h2",{text:e.title}),pe("subline",Z(de,e.state),a?`Revision ${a.number}${e.revisionCount>1?` of ${e.revisionCount}`:""}`:null,Ye[e.gate]??"Review",e.approvedBy?`Approved via ${ue[e.approvedBy]??e.approvedBy}`:null)),f?.canDiscuss()?t("div",{class:"head-actions"},t("div",{class:"actions"},ae("review",e.id))):null)];return e.notice&&o.push(t("div",{class:"notice warn",role:"status",text:e.notice})),o.push(t("p",{class:"review-question",text:e.question??"What would you like to keep or change?"})),o.push(Pe(e)),a?.note&&o.push(t("p",{class:"small muted"},t("strong",{text:"Submission note: "}),a.note)),e.checks.length&&o.push(q("What to check",null,t("ul",{class:"bullets"},e.checks.map(i=>t("li",{text:i}))))),o.push(Ue(n,e)),e.decisions.length&&o.push(R(`history-${e.id}`,`History · ${e.decisions.length} ${e.decisions.length===1?"decision":"decisions"}`,t("ul",{class:"list history"},e.decisions.slice().reverse().map(i=>t("li",{class:i.current?"":"stale"},O(i.decision==="approve"?"ok":"warn"),t("div",{},t("div",{},t("strong",{text:i.decision==="approve"?"Approved":i.decision==="feedback"?"Feedback saved":"Changes requested"}),` · revision ${i.revision??"?"}`,i.current?"":" · earlier evidence"),t("div",{class:"who",text:`${ue[i.channel]??i.channel} · ${B(i.at)} · ${ce(i.at)}`}),i.feedback?t("div",{class:"text",text:i.feedback}):null)))))),o.push(R(`review-${e.id}`,"Details",W([["Gate",e.gateEnforcement],["Decision",c.kind==="mcp"?"Recorded as a host-mediated decision from this app view, bound to this exact revision. The assistant cannot record it with its own tools.":"Recorded as a decision from the local panel client (session token), bound to this exact revision. The token identifies a local client, not a person. New evidence makes it stale."],["Reference",e.reference?.label??"Not registered"],["Evidence",e.actual?.label??"Not submitted"],["Evidence hash",e.evidenceHash?t("code",{text:e.evidenceHash.slice(0,12)}):null],oe("review")].filter(Boolean)))),o}function ie(){return t("div",{class:"placeholder",text:c.kind==="mcp"?"This view could not display the image. Open the localhost panel to review it.":"The image could not be displayed."})}function Fe(n,e,a=""){if(s.failedImages.has(n))return ie();let o=s.imageNodes.get(n);return o||(o=t("img",{alt:e,dataset:{image:n}}),o.addEventListener("error",()=>{o.getAttribute("src")&&(s.failedImages.add(n),s.imageNodes.delete(n),o.replaceWith(ie()))}),s.imageNodes.set(n,o)),o.alt=e,o.style.cssText=a,o}function re(n,e,a,o){let i=t("div",{class:"frame"});if(o?.present)i.append(Fe(`${e.id}|${a}|${o.sha256??"none"}`,`${n} for ${e.title}`));else{let u;a==="actual"?u=e.revision?"No evidence file yet, or it is not a supported image. It appears here once the screenshot exists.":"No evidence yet. The builder or host submits a screenshot when the work is ready.":u=o?"The registered reference image is missing or not a supported image.":"No reference image is registered.",i.append(t("div",{class:"placeholder",text:u}))}return t("figure",{},t("figcaption",{},t("span",{class:"label",text:n}),t("span",{class:"file",text:o?.label??""})),i)}function Pe(n){return t("div",{class:"evidence review-stage"},n.actual?.present?re("For your review",n,"actual",n.actual):t("p",{class:"muted",text:n.question?"Answer below. Visual material can be added to this question.":"Waiting for visual material."}),n.reference?.present&&n.reference.sha256!==n.actual?.sha256?R(`context-${n.id}`,"Supporting reference",re("Context",n,"reference",n.reference)):null)}function Ue(n,e){let a=!n.readOnly&&!!e.evidenceHash,o=a&&e.actual?.present===!0,i=`${e.id}:${e.evidenceHash}`,u=t("textarea",{"aria-label":"Feedback for the builder",placeholder:a?"Your answer, preference, or feedback…":"Waiting for a question or visual material.",disabled:!a,maxlength:"4000",rows:"3",dataset:{key:`feedback-${e.id}`},oninput:m=>s.drafts.set(i,m.target.value)});u.id=`feedback-${e.id}`,u.value=s.drafts.get(i)??"";let d=m=>E(()=>c.decide({reviewId:e.id,decision:m,feedback:u.value,expectedHash:e.evidenceHash}),()=>(s.drafts.delete(i),m==="approve"?`Approved revision ${e.revision.number}.`:m==="feedback"?"Feedback saved. The agent can read it at its next checkpoint.":"Changes requested."));return t("div",{class:`composer ${a?"":"disabled"}`.trim(),role:"group","aria-label":"Your decision"},t("p",{class:"small muted",text:"Reply here without interrupting the session. The agent reads saved feedback at its next checkpoint."}),u,t("button",{class:"button primary",disabled:!a||s.busy,onclick:()=>{if(!u.value.trim()){g("Add your answer or feedback first.","bad"),u.focus();return}d("feedback")}},"Send feedback"),R(`approval-${e.id}`,"Approval actions",t("div",{class:"composer-foot"},e.demoRevisionAvailable&&n.provenance==="demo"?t("button",{class:"button ghost small",disabled:s.busy,onclick:()=>E(()=>c.demoRevise({reviewId:e.id}),"Demo: a new revision was submitted. Earlier decisions no longer apply.")},"Simulate revised evidence (demo)"):null,t("span",{class:"composer-note",text:o?`Bound to revision ${e.revision?.number??"?"}`:"Waiting for evidence"}),t("span",{class:"spacer"}),t("button",{class:"button small",disabled:!o||s.busy,onclick:()=>{if(!u.value.trim()){g("Describe the change you want first.","bad"),u.focus();return}d("request_changes")}},"Request changes"),t("button",{class:"button primary small",disabled:!o||s.busy,onclick:()=>d("approve")},e.revision?`Approve revision ${e.revision.number}`:"Approve"))))}async function We(){for(let n of l.querySelectorAll("img[data-image]")){let e=n.dataset.image,[a,o,i]=e.split("|");if(s.images.has(e)){let u=s.images.get(e);u.url&&n.getAttribute("src")!==u.url&&(n.src=u.url);continue}s.images.set(e,{url:null});try{let u=await c.artifact(a,o,i);s.images.set(e,{url:u});for(let d of l.querySelectorAll(`img[data-image="${CSS.escape(e)}"]`))d.src=u}catch(u){s.images.delete(e),s.imageNodes.delete(e),s.failedImages.add(e),n.replaceWith(t("div",{class:"placeholder",text:u?.message??"The image could not be loaded."}))}}}function Be(n){let e=n.runs.flatMap(i=>i.usage.models.map(u=>({run:i,m:u}))),a=q("Recorded usage","Session counters per run");if(!e.length)a.append(t("p",{class:"muted small",text:"No usage has been recorded for the registered runs. Nothing is estimated."}));else{let i=u=>Number.isSafeInteger(u)?t("td",{title:V.format(u),text:le(u)}):t("td",{},T("—"));a.append(t("div",{class:"table-wrap"},t("table",{},t("thead",{},t("tr",{},["Run · model","Input","Output","Cache read","Cache write","Elapsed","Active","List-price equiv."].map(u=>t("th",{scope:"col",text:u})))),t("tbody",{},e.map(({run:u,m:d})=>t("tr",{},t("td",{},t("div",{text:u.label}),t("div",{class:"small muted",text:d.model})),i(d.inputTokens),i(d.outputTokens),i(d.cacheReadInputTokens),i(d.cacheCreationInputTokens),t("td",{},M(u.timing.elapsedMs)??T()),t("td",{},M(u.timing.activeMs)??T("n/a")),t("td",{},J(d.billedUsd)?`${J(d.billedUsd)} billed`:J(d.equivalentUsd)??T("—"))))))))}a.append(t("p",{class:"foot",text:"Resumed runs can include earlier usage: do not add overlapping rows together. List-price equivalents are not bills."}),R("usage-notes","How usage is counted",W([["Rows","Each row shows the session counters recorded by that run. Repeated samples within a run are deduplicated; rows from different runs are listed separately."],["Time","Elapsed is wall clock; active is API time when the CLI reports it."],["Cost","Subscription list-price equivalents are not bills, and account quota is not inferred from tokens."],["Coverage",n.coverage]])));let o=q("Routes","Configured versus verified",t("div",{class:"table-wrap"},t("table",{class:"routes"},t("thead",{},t("tr",{},["Role","Model · route","Status"].map(i=>t("th",{scope:"col",text:i})))),t("tbody",{},n.routes.map(i=>t("tr",{},t("td",{text:i.label}),t("td",{class:"mono",text:[i.model,i.route].filter(Boolean).join(" · ")||"not configured"}),t("td",{},Z(Ge,i.status))))))),R("route-notes","Route details",W(n.routes.map(i=>[i.label,i.detail]))));return t("div",{class:"detail usage"},a,o)}function P({heading:n,body:e,confirm:a,danger:o=!1,onConfirm:i}){let u=t("dialog",{"aria-label":n},t("div",{class:"dialog-body"},t("h2",{text:n}),e),t("div",{class:"dialog-foot"},t("button",{class:"button",onclick:()=>u.close()},"Cancel"),t("button",{class:`button ${o?"danger":"primary"}`,onclick:async()=>{u.close(),await i()}},a)));u.addEventListener("close",()=>u.remove()),document.body.append(u),u.showModal()}async function Ve(n){let e;try{e=await c.launchPreview(n)}catch(o){g(o?.message??"Could not prepare the launch.","bad");return}let a=e.profile;if(!a.launch.allowed||!e.request.sha256||e.request.problems){g(a.launch.reasons[0]??"This profile cannot launch right now.","bad");return}P({heading:`Start “${a.label}”?`,confirm:"Start run",body:[t("div",{class:"callout",text:e.notice}),t("dl",{class:"facts"},t("dt",{text:"Model"}),t("dd",{text:`${a.model} · ${a.route}`}),t("dt",{text:"Mode"}),t("dd",{text:`${a.mode} · ${a.toolProfile} tools`}),t("dt",{text:"Workspace"}),t("dd",{text:a.workspace??"—"}),t("dt",{text:"Objective"}),t("dd",{text:e.request.objective}),t("dt",{text:"Checks"}),t("dd",{text:String(e.request.acceptanceChecks)}),t("dt",{text:"Budget"}),t("dd",{text:`$${e.request.budgetUsd} authorized in the request`}),t("dt",{text:"Deadline"}),t("dd",{text:M(e.deadlineSeconds*1e3)}),t("dt",{text:"Request"}),t("dd",{},t("code",{text:e.request.sha256.slice(0,12)}),` · prompt ${V.format(e.prompt.bytes)} bytes`)),a.gate.reviewId?t("p",{class:"small muted",text:`Gate “${a.gate.title}” is approved.`}):null],onConfirm:()=>E(()=>c.launch({profileId:n,confirm:!0,requestSha256:e.request.sha256,promptSha256:e.prompt.sha256}),o=>(s.runId=o?.runId??s.runId,s.view="overview","Run started."))})}async function ze(n){let e;try{e=await c.resumePreview(n.id)}catch(a){g(a?.message??"Could not prepare the resume.","bad");return}if(!e.allowed){g(e.reason,"bad");return}P({heading:`Resume “${n.label}”?`,confirm:"Resume run",body:[t("div",{class:"callout",text:e.notice}),t("dl",{class:"facts"},t("dt",{text:"Profile"}),t("dd",{text:e.profile}),t("dt",{text:"Prompt"}),t("dd",{},t("code",{text:e.prompt.sha256.slice(0,12)}),` · ${V.format(e.prompt.bytes)} bytes`),t("dt",{text:"Feedback"}),t("dd",{text:e.feedback?`Includes your revision ${e.feedback.revision} feedback: “${e.feedback.text.slice(0,280)}”`:"No recorded feedback is included."}))],onConfirm:()=>E(()=>c.resume({runId:n.id,confirm:!0,promptSha256:e.prompt.sha256}),a=>(s.runId=a?.runId??s.runId,"Resumed into a new run."))})}function He(n,e){let a=f?.discussText(s.snapshot,{kind:n,id:e})??null;if(!a){g("This selection is no longer registered.","bad");return}P({heading:n==="run"?"Discuss this run in chat?":"Discuss this review in chat?",confirm:"Send message",body:[t("p",{class:"muted small",text:"This sends the message below to the conversation as you. It cannot approve, request changes, or launch anything."}),t("div",{class:"callout message",text:a})],onConfirm:()=>E(()=>f.discuss(a),"Sent to the conversation.")})}function Ke(n){P({heading:`Stop “${n.label}”?`,confirm:"Stop run",danger:!0,body:t("p",{class:"muted",text:"The panel asks the run’s own runner to stop over its authenticated control channel. Only this run’s process group is stopped. Partial output stays in the run directory."}),onConfirm:()=>E(()=>c.cancel({runId:n.id}),e=>e?.cancelled?"Stop requested.":`Not stopped: ${e?.status??"unknown"}.`)})}return w(),{start(n=null){n&&(s.snapshot=n,s.signature=JSON.stringify({...n,generatedAt:null}),s.connection="live",s.lastOk=new Date),w(),$({force:!0}),ee(),document.addEventListener("visibilitychange",()=>{document.visibilityState==="visible"&&$()})},show(n,{view:e=null,selection:a=null,preferences:o=null}={}){c.useDemo?.(n.provenance==="demo"),r(o),["overview","review","usage"].includes(e)&&!s.touched.view&&(s.view=e),s.snapshot=n,s.signature=JSON.stringify({...n,generatedAt:null}),s.connection="live",s.lastOk=new Date,w(),a?.kind==="run"?p({view:"overview",runId:a.id}):a?.kind==="review"&&p({view:"review",reviewId:a.id}),b()},navigate:p,notify:n=>g(n),rerender:()=>w(),refresh:()=>$({force:!0}),stop(){clearTimeout(s.timer),clearTimeout(g.timer),s.timer=null,s.stopped=!0},fail(n){s.connection="lost",s.error=n,w()}}}var ve=["inputTokens","outputTokens","cacheReadInputTokens","cacheCreationInputTokens"];var K=()=>({inputTokens:0,outputTokens:0,cacheReadInputTokens:0,cacheCreationInputTokens:0}),H=(l,c)=>Object.fromEntries(ve.map(s=>[s,l[s]+(c[s]||0)])),j=(l,c)=>Object.fromEntries(ve.map(s=>[s,Math.max(l[s]||0,c[s]||0)]));function Qe(l,c,s){let f=l.usageState||={messages:new Map,finals:new Map,running:new Map,incomplete:new Set},r=j(K(),c.usage);if(c.scope==="message"){let b=c.model||"Unknown",h=f.messages.get(b);h||f.messages.set(b,h=new Map);let g=h.get(c.messageId);h.set(c.messageId,{usage:g?j(g.usage,r):r,first:g?g.first:s});return}let p=c.model||null;if(c.completeness==="final")f.finals.set(p,{usage:r,at:s});else{let b=f.running.get(p);f.running.set(p,{usage:b?j(b.usage,r):r,at:s}),c.completeness==="incomplete"&&f.incomplete.add(p)}}function he(l,c,s,f){let r=K(),p=K(),b=!1;for(let h of l)r=H(r,h.usage),c&&h.first>c.at&&(p=H(p,h.usage),b=!0);if(c){let h=H(c.usage,p),g=s&&s.at>c.at;return g&&(h=j(h,s.usage)),{usage:h,completeness:b||g?f?"incomplete":"provisional":"final",basis:b||g?"Session total plus later records":"Session total"}}return{usage:s?j(r,s.usage):r,completeness:f?"incomplete":"provisional",basis:s?"Running session counter":"Message snapshots"}}function Xe(l){let s=[...new Set([...l.messages.keys(),...[...l.finals.keys(),...l.running.keys()].filter(r=>r!==null)])].map(r=>({model:r,...he(l.messages.get(r)?.values()||[],l.finals.get(r),l.running.get(r),l.incomplete.has(r))})),f;if(l.finals.has(null))f=he([...l.messages.values()].flatMap(r=>[...r.values()]),l.finals.get(null),l.running.get(null),l.incomplete.has(null));else{let r=l.running.get(null),p=s.reduce((h,g)=>H(h,g.usage),K()),b=l.incomplete.has(null)||s.some(h=>h.completeness==="incomplete")?"incomplete":!r&&s.length&&s.every(h=>h.completeness==="final")?"final":"provisional";f={usage:r?j(p,r.usage):p,completeness:b,basis:r?"Running session counter":s.length>1?"Sum of model segments":s[0]?.basis||"Message snapshots"}}return{...f,models:s}}function we(l){let c=new Map,s=new Set,f=0;for(let r of l){if(s.has(r.eventId))continue;s.add(r.eventId),f++;let p=c.get(r.agentId);p||(p={id:r.agentId,parent:r.parentAgentId||null,title:r.parentAgentId?"Worker":"Lead",model:"Unknown",status:"Observed",steps:[],history:[],verification:"not-run",created:r.at,last:r.at},c.set(r.agentId,p)),r.parentAgentId&&(p.parent=r.parentAgentId),p.last=r.at,p.history.push(r),!["agent.created","model.observed"].includes(r.type)&&!p.firstActivity&&(p.firstActivity=r.at),r.type==="agent.created"&&(p.title=r.data.title&&(!["Worker","Lead"].includes(r.data.title)||["Worker","Lead"].includes(p.title))?r.data.title:p.title,p.assignment=r.data.assignment||p.assignment,p.status==="Observed"&&(p.status="Queued")),r.type==="model.observed"&&(p.model=r.data.model||"Unknown"),r.type==="agent.started"&&(p.status="Working"),r.type==="agent.returned"&&(p.status=p.parent?"Returned · awaiting review":"Turn complete"),r.type==="agent.cancelled"&&(p.status="Cancelled"),r.type==="agent.failed"&&(p.status="Failed"),r.type==="review.accepted"&&(p.status="Accepted"),r.type==="review.changes_requested"&&(p.status="Needs correction"),r.type==="plan.updated"&&(p.steps=r.data.steps),r.type==="verification.reported"&&(p.verification=r.data.status),r.type==="usage.recorded"&&(Qe(p,r.data,f),p.model==="Unknown"&&r.data.model&&(p.model=r.data.model)),r.data.text&&(p.activity=r.data.text)}return[...c.values()].map(({usageState:r,...p})=>({...p,usage:r?Xe(r):null}))}var y=JSON.parse(document.getElementById("recording-data").textContent),k=0,U=null,_="panel",v=l=>document.getElementById(l),x=(l,c,s)=>{let f=document.createElement(l);return c!==void 0&&(f.textContent=c),s&&(f.className=s),f},be=ge(v("app"),{kind:"replay",artifact:async(l,c,s)=>{let f=y.images[s];if(!f)throw Error("Image not included in this export");if(!/^image\/(png|jpeg|webp|gif)$/.test(f.type))throw Error("Unsupported image");return`data:${f.type};base64,${f.base64}`}});function L(){clearTimeout(U),U=null,v("play").textContent="Play"}function N(){let l=y.frames[k];v("position").value=String(k),v("time").textContent=`${k+1} / ${y.frames.length} · ${new Date(l.at).toLocaleTimeString()}`,v("capture-state").textContent=`Recording · ${y.state}${y.details?" · Private details included":""}${y.imagesIncluded?" · Images included":""}`;let c=structuredClone(l.snapshot);if(c){c.readOnly=!0,c.launchEnabled=!1;for(let s of c.runs??[])s.actions={cancel:{allowed:!1,reason:"Read-only replay"},resume:{allowed:!1,reason:"Read-only replay"}};for(let s of c.profiles??[])s.launch={allowed:!1,reasons:["Read-only replay"]};for(let s of c.reviews??[])s.demoRevisionAvailable=!1;be.show(c)}else be.show({provenance:"unconfigured",problems:["No panel snapshot captured at this position. Use Recorded sessions for registered agent events."]});if(v("gaps").textContent=l.problems?.length?`${l.problems.length} capture gap(s) at this position. ${l.problems.join(" · ")}`:"",v("app").hidden=_!=="panel",v("session-view").hidden=_!=="sessions",v("checkpoint-view").hidden=_!=="checkpoints",_==="sessions"){let s=v("session-view");s.replaceChildren(),s.append(x("p","Registered session events, including any earlier session history. These overlap panel counters; do not add the two views together.","foot"));let f=we(y.events.filter(r=>Date.parse(r.at)<=Date.parse(l.at)));for(let r of f){let p=x("section",void 0,"session-card");p.append(x("h2",r.title),x("p",`${r.model} · ${r.status}`,"muted")),r.usage?p.append(x("p",`Input ${r.usage.usage.inputTokens.toLocaleString()} · Output ${r.usage.usage.outputTokens.toLocaleString()} · Cache read ${r.usage.usage.cacheReadInputTokens.toLocaleString()} · Cache write ${r.usage.usage.cacheCreationInputTokens.toLocaleString()} · ${r.usage.completeness}`,"foot")):p.append(x("p","Usage not recorded","muted"));let b=x("ul");for(let h of r.steps)b.append(x("li",`${h.status}: ${h.step}`));p.append(b),r.activity&&p.append(x("p",r.activity,"foot")),s.append(p)}f.length||s.append(x("p","No registered session events at this position.","empty"))}if(_==="checkpoints"){let s=v("checkpoint-view");s.replaceChildren();for(let f of y.checkpoints.filter(r=>k===y.frames.length-1||Date.parse(r.at)<=Date.parse(l.at))){let r=x("section",void 0,"session-card");r.append(x("h2",`${f.kind} · ${f.label}`),x("pre",JSON.stringify(f,null,2))),s.append(r)}s.children.length||s.append(x("p","No checkpoints included at this position.","empty"))}}function Q(){if(k>=y.frames.length-1){L();return}let l=Math.max(40,(Date.parse(y.frames[k+1].at)-Date.parse(y.frames[k].at))/Number(v("speed").value));U=setTimeout(()=>{k++,N(),Q()},l)}v("play").onclick=()=>{if(U){L();return}k===y.frames.length-1&&(k=0),N(),v("play").textContent="Pause",Q()};v("position").max=String(y.frames.length-1);v("position").oninput=()=>{L(),k=Number(v("position").value),N()};v("previous").onclick=()=>{L(),k=Math.max(0,k-1),N()};v("next").onclick=()=>{L(),k=Math.min(y.frames.length-1,k+1),N()};v("speed").onchange=()=>{U&&(L(),v("play").textContent="Pause",Q())};for(let l of document.querySelectorAll("[data-view]"))l.onclick=()=>{_=l.dataset.view;for(let c of document.querySelectorAll("[data-view]"))c.setAttribute("aria-pressed",String(c===l));N()};v("coverage").textContent=y.coverage;N();})();
+</script></body></html>

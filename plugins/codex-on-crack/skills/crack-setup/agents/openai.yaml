@@ -1,0 +1,6 @@
+interface:
+  display_name: "Crack Setup"
+  short_description: "Configure one builder, with optional extra roles."
+  default_prompt: "Use $codex-on-crack:crack-setup to configure one compatible builder for my current setup."
+policy:
+  allow_implicit_invocation: true

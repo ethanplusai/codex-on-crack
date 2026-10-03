@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex on Crack"
+  short_description: "One lead, one worker, checked results."
+  default_prompt: "Use $codex-on-crack:crack for this task: scope the work, delegate one coherent bundle to an approved worker, and review its result."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,38 @@
+{
+  "name": "codex-on-crack",
+  "version": "2.2.2+codex.20261002",
+  "description": "Plan, delegate, and review work across your configured models from one Codex conversation.",
+  "author": {
+    "name": "Ethan Rogers"
+  },
+  "homepage": "https://github.com/ethanplusai/astra-flash-orchestrator",
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "subagents",
+    "multi-model",
+    "codex-router",
+    "planning",
+    "code-review",
+    "debugging",
+    "verification"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex on Crack",
+    "shortDescription": "Your models, working together in Codex.",
+    "longDescription": "Coordinate compatible native workers and Opus through Claude Code. Plan the work, hand off scoped assignments, bring Codex tool evidence back to the lead, and review the result.",
+    "developerName": "Ethan Rogers",
+    "category": "Developer Tools",
+    "defaultPrompt": [
+      "Build this feature with one configured worker and lead review",
+      "Help me choose and set up worker models",
+      "Record my results from this codex-on-crack trial"
+    ],
+    "brandColor": "#E11D48",
+    "capabilities": [
+      "Read",
+      "Write"
+    ]
+  }
+}

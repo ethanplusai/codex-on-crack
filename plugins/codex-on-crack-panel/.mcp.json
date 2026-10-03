@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "codex-on-crack-panel": {
+      "command": "node",
+      "args": ["./server/panel.mjs", "mcp"],
+      "cwd": "."
+    }
+  }
+}

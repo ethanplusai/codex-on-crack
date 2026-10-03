@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex on Crack · Panel"
+  short_description: "Report run status and submit review evidence; the user decides in the panel."
+  default_prompt: "Use $codex-on-crack-panel:crack-panel to tell me what is waiting for my review in the build panel."
+policy:
+  allow_implicit_invocation: true

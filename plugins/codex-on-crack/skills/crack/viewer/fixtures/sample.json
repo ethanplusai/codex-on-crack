@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "mode": "Sample",
+  "events": [
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-1",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:00:00.000Z",
+      "type": "agent.created",
+      "data": {
+        "title": "Build the project board",
+        "assignment": "Delegate implementation and review the patch against acceptance checks."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-2",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:00:01.000Z",
+      "type": "model.observed",
+      "data": {
+        "model": "GPT-6 Astra"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-3",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:00:02.000Z",
+      "type": "agent.started",
+      "data": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-4",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:00:08.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Define acceptance",
+            "status": "completed"
+          },
+          {
+            "step": "Delegate implementation",
+            "status": "in_progress"
+          },
+          {
+            "step": "Review patch and evidence",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-5",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:00:24.000Z",
+      "type": "agent.created",
+      "data": {
+        "title": "Implement board interactions",
+        "assignment": "Add card movement, preserve storage, and verify reload behavior."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-6",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:00:25.000Z",
+      "type": "model.observed",
+      "data": {
+        "model": "DeepSeek V4.1 Flash"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-7",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:00:26.000Z",
+      "type": "agent.started",
+      "data": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-8",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:00:30.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "in_progress"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "pending"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-9",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:01:10.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "completed"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "in_progress"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-10",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:02:18.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "completed"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "completed"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-11",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:02:19.000Z",
+      "type": "activity.reported",
+      "data": {
+        "text": "Checking that moving a card persists after reload."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-12",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:03:40.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "completed"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "completed"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-13",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:03:41.000Z",
+      "type": "verification.reported",
+      "data": {
+        "status": "passed",
+        "text": "Persistence checks reported passed."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-14",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:03:42.000Z",
+      "type": "agent.returned",
+      "data": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-15",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:04:15.000Z",
+      "type": "review.changes_requested",
+      "data": {
+        "text": "Keyboard movement is missing. Add an accessible interaction and regression check."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-16",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:04:16.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "completed"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "completed"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "completed"
+          },
+          {
+            "step": "Fix keyboard movement",
+            "status": "in_progress"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-17",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:04:56.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Inspect the existing board",
+            "status": "completed"
+          },
+          {
+            "step": "Implement card movement",
+            "status": "completed"
+          },
+          {
+            "step": "Test persistence and edge cases",
+            "status": "completed"
+          },
+          {
+            "step": "Fix keyboard movement",
+            "status": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-18",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:05:00.000Z",
+      "type": "agent.returned",
+      "data": {}
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-19",
+      "agentId": "worker",
+      "parentAgentId": "lead",
+      "at": "2026-09-28T12:05:08.000Z",
+      "type": "review.accepted",
+      "data": {
+        "text": "Lead accepted the corrected patch. Human usability review pending."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-20",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:05:09.000Z",
+      "type": "plan.updated",
+      "data": {
+        "steps": [
+          {
+            "step": "Define acceptance",
+            "status": "completed"
+          },
+          {
+            "step": "Delegate implementation",
+            "status": "completed"
+          },
+          {
+            "step": "Review patch and evidence",
+            "status": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "eventId": "sample-21",
+      "agentId": "lead",
+      "parentAgentId": null,
+      "at": "2026-09-28T12:05:10.000Z",
+      "type": "agent.returned",
+      "data": {}
+    }
+  ]
+}

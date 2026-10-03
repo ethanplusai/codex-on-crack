@@ -1,257 +1,141 @@
-# Astra Flash Orchestrator
+# Codex on Crack
 
-**OpenCode support:** use the same planning, implementation and review workflow
-with native OpenCode agents. See [Install in OpenCode](INSTALL-IN-OPENCODE.md).
-The OpenCode adapter uses your selected primary model and an explicitly chosen
-worker model; it works with the OpenCode desktop app without a separately
-installed CLI. The guide includes file-only setup without Python. It does not
-require Codex Router. The Codex instructions and
-benchmark results below remain specific to the original Codex workflow.
+**Run your models together. Keep the work in Codex.**
 
-**Save Astra for the decisions that need it. Let DeepSeek V4.1 Flash do the volume.**
+Previously **Astra Flash Orchestrator**. The original Astra + Flash workflow grew
+into a package for planning, delegation, tool handoffs, and reviewing work across
+your configured models. [Upgrading from the original? Start here.](docs/UPGRADING.md)
 
-![Astra Flash Orchestrator measured efficiency](docs/assets/astra-savings-v2.svg)
+> Run subagents through Opus 5.5.
 
-A personal Codex skill designed to preserve Astra usage without giving up Astra's
-judgment. Astra stays responsible for planning, architecture, high-stakes
-decisions and final review. DeepSeek V4.1 Flash takes the high-volume work:
-repository discovery, implementation, testing, debugging and routine verification.
+> Have Opus plan this and Flash implement it. Bring the result back for review.
 
-Bring an existing plan or start with a feature request. The workflow turns it
-into coherent implementation bundles, sends those bundles to Flash, then returns
-the completed patch and evidence to Astra for one focused acceptance pass.
+> Help me choose which of my models should work on this project.
 
-> **Status:** early release. Offline installation tests pass, and the workflow has completed a measured local field build. Results below describe that run, not guaranteed savings. A new installation still needs runtime routing verification on its first authorized task. Installation never runs paid inference.
+You describe the work. The skills find the supported route in your setup, agree
+on the plan with you, and carry the assignment through implementation and review.
+You don't have to explain the CLI or your subscription in every prompt.
 
-## Measured efficiency
+![15-second demo: type a prompt, open the panel, follow agents, and send design feedback](docs/media/panel-demo.gif)
 
-In one substantial field build, Astra Flash Orchestrator used **98.9% less Astra
-input per 1,000 implementation and test lines** than the all-Astra baseline. It
-did that by moving the implementation loop—not the important decisions—to Flash.
-Total API-equivalent compute per 1,000 lines was **97.0–97.7% lower**, while the
-measured phase produced 39% more implementation and test lines.
+*15-second illustrated walkthrough with a recreated Codex interface and synthetic
+project data. The workflow is condensed; this is not a live build recording.*
 
-| Workflow | Astra input per 1K implementation lines | Total compute per 1K lines |
-| --- | ---: | ---: |
-| All Astra | 8.56M | $11.32 |
-| Astra + DeepSeek V4.1 Flash | **95.9K** | **$0.26–$0.34** |
+[Install](INSTALL-IN-CODEX.md) · [Upgrade](docs/UPGRADING.md) ·
+[Workflow](docs/WORKFLOW.md) · [Panel](plugins/codex-on-crack-panel/README.md) ·
+[OpenCode / original installer](INSTALL-IN-OPENCODE.md)
 
-The per-token price difference explains why delegating implementation has so
-much leverage:
+## One conversation, different models
 
-| Cost per 1M tokens | Astra estimator | DeepSeek V4.1 Flash | Astra premium |
-| --- | ---: | ---: | ---: |
-| Uncached input | $10.00 | $0.15–$0.30 | 33–67× |
-| Cached input | $1.00 | $0.003–$0.006 | 167–333× |
-| Output | $50.00 | $0.60–$1.20 | 42–83× |
+Your selected **Codex model** keeps the conversation, coordinates the work, and
+uses the host's available tools. It can delegate to a compatible native worker,
+including a model configured through Codex Router.
 
-Astra does not have a public API SKU; its values above are API-equivalent
-estimates, not ChatGPT or Codex subscription charges. Flash values use published
-off-peak and peak API rates. See the [benchmark methodology](docs/BENCHMARK.md)
-for sources, exact measurements and limitations.
+**Opus 5.5** can implement a whole assignment through your authenticated Claude
+Code client. It can also plan and review the build while Codex dispatches a native
+worker, such as **DeepSeek V4.1 Flash**, for implementation. Codex returns worker
+results and host-tool evidence to the lead.
 
-## How it works
+That means you can use Claude for a build and still ask the Codex host to check
+it in the browser, use available computer tools, or generate an image. External
+Claude sessions do not directly inherit Codex tools or replace the model selected
+in your composer. The host performs those steps.
 
-```text
-Astra  →  scope + design + task brief
-Flash  →  implement + test + report
-Astra  →  review + verify + accept or request fixes
-       →  integrate + checkpoint + next task
-```
-
-- **Native delegation:** uses the `astra_flash_builder` role, not a separate agent CLI.
-- **Coherent assignments:** one feature slice can include many edit/test/fix steps.
-- **Focused Astra root:** normally one planning batch, one dispatch, one wait, one
-  batched acceptance review and one final response.
-- **Worker-owned execution:** Flash handles in-scope discovery, implementation,
-  testing, debugging and routine browser/visual QA without progress polling.
-- **Review before acceptance:** the builder submits evidence; Astra decides whether it is complete.
-- **Existing plans welcome:** works with repository plans, Superpowers/GSD artifacts, or the included templates.
-- **Controlled parallel work:** one writer by default; two only with independent tasks and verified separate workspaces.
-- **Reversible installation:** dry run, backups and a guarded undo receipt.
-
-This is workflow guidance, not a deterministic scheduler, a security sandbox, or a guarantee of model quality or cost savings. It is independent of OpenAI, DeepSeek and Codex Router.
-
-### One orchestration workflow
-
-There is no mode setting or mode-switch command. The package always uses the
-usage-saving Astra → Flash → Astra workflow for substantial implementation.
-
-Three routing outcomes remain intentionally different:
-
-- Substantial implementation uses Astra to plan and review while Flash builds.
-- Trivial work and explicit single-agent requests stay with the root session.
-- Concrete security, architecture, payments, tenancy, secrets, migration or
-  production risk can justify targeted additional Astra review.
-
-Those are scope and safety decisions, not user-selectable performance modes.
-
-## Requirements
-
-Before installing, you need:
-
-1. A Codex client that supports native subagents and standalone custom agent TOML files under `$CODEX_HOME/agents/`.
-2. GPT-6 Astra selected as the root model.
-3. Python **3.11 or newer**. No third-party Python dependencies are needed.
-4. An existing [Codex Router installation](https://github.com/duolahypercho/codex-router), configured and authenticated for one reviewed DeepSeek V4.1 Flash route below.
-5. A local Codex model catalog advertising that exact route with `multi_agent_version: "v2"`.
-
-| Provider | Worker route |
+| Arrangement | Who does what |
 | --- | --- |
-| DeepSeek API (default) | `deepseek/deepseek-v4.1-flash` |
-| OpenRouter | `openrouter/deepseek-v4.1-flash` |
-| opencode Go | `opencode-go/deepseek-v4.1-flash` |
-| Command Code | `commandcode/deepseek-v4.1-flash` |
-| Nous Research | `nousresearch/deepseek-v4.1-flash` |
-| Ollama Cloud | `ollama-cloud/deepseek-v4.1-flash` |
+| Codex host + native worker | The host scopes and reviews; a compatible configured worker implements. |
+| Codex host + Opus | Opus implements through Claude Code; Codex coordinates and validates. |
+| Codex host + Opus + native worker | Opus plans and reviews; Codex handles dispatch and tool requests; the worker implements. |
+| Just the current model | Small tasks and explicit solo work stay in the current conversation. |
 
-Provider credentials are entered by you through Codex Router's private local
-prompt before installing this package. Never paste an API key into an assistant
-chat. This installer never asks for, reads, stores or validates provider keys.
+Model choice is yours. Recommendations use your configured roles, preferences,
+and declared capabilities. The package doesn't benchmark every model or silently
+substitute another model or billing route. The current Claude adapter targets
+`claude-opus-5-5`; other Claude models are not automatically supported by it.
 
-> **Do not spend API credit during installation.** Installing this package does
-> not authorize an assistant to run `subagents certify`, `test-model --live`, a
-> Router smoke test or any other paid inference probe. If the selected route is
-> absent or is not already advertised as `v2`, the installer stops and reports
-> the prerequisite. Decide separately whether to certify a route yourself.
+## See what is happening
 
-Do **not** add or change `[agents].default_subagent_model` for this package. The
-installer creates a named `astra_flash_builder` role that pins its own route and
-catalog-supported effort, so unrelated subagents keep their existing defaults.
-The installer **does not install the Router, add credentials, select your root
-model, or rewrite `config.toml`**. Direct DeepSeek remains the default. Any other
-provider requires an explicit `--worker-route`; if that route is unavailable,
-installation stops instead of silently choosing another provider.
+The optional panel lives alongside your conversation as an embedded MCP App in
+supported Codex hosts. A localhost view is available as a fallback.
 
-The installer supports loopback Router URLs using `/v1` or `/_codex-router/<capability>/v1`. It rejects remote hosts, embedded credentials, queries, fragments and unexpected paths. Client/project/UI overrides still need checking in your actual session. Router subagent selection enables discovery; it does not prove successful inference. Some Router enable commands automatically launch paid verification, so inspect the installed version before changing selection. This installer never enables routes or runs those probes.
+Choose a workspace first. Its **Overview**, **Review**, and **Usage & routes**
+then show only that project's registered work:
+
+- Follow phases, agents, model handoffs, and recorded tool activity.
+- Inspect per-run timing and available input, output, and cache counters.
+- Answer visual questions and leave feedback while the conversation continues.
+- Keep decisions tied to the screenshot revision you actually reviewed.
+- Record registered sources and export an offline replay for later inspection.
+
+Feedback is saved for the agent to read at a natural checkpoint. Sending it does
+not interrupt the conversation or count as approval. Explicit approval is a
+separate action. Register the sessions and runs you want to observe; the panel
+doesn't automatically read every conversation on your computer.
 
 ## Install
 
-Download this repository as a ZIP and extract it, or clone it:
+You need **Node.js 24.15+**, a Codex client with plugin support, and your own model
+access. Native workers need a compatible configured route. Claude mode needs
+the official Claude Code CLI, authenticated through your subscription.
+
+From this checkout in a stable folder:
 
 ```sh
-git clone https://github.com/ethanplusai/astra-flash-orchestrator.git
-cd astra-flash-orchestrator
+codex plugin marketplace add "$PWD"
+codex plugin add codex-on-crack@codex-on-crack
 ```
 
-Run the following commands from that repository folder.
-
-### Fastest safe terminal install
-
-The installer performs its own prerequisite checks before writing. Preview the
-exact destinations, then apply:
+Add the panel if you want it:
 
 ```sh
-python3 -B install.py
-python3 -B install.py --apply
+codex plugin add codex-on-crack-panel@codex-on-crack
 ```
 
-That is the normal installation path. The first command changes nothing. The
-second repeats preflight, installs atomically, backs up existing instructions and
-prints a guarded undo receipt. It does not change your root model, Router,
-credentials, permissions or reasoning effort.
+Start a fresh conversation:
 
-To use an already-configured alternate provider, pass its exact route to both
-commands. For OpenRouter:
+> Help me plan this project. Check which models I have available, recommend
+> who should do what, and agree on the plan with me before building.
+> Connect this workspace and its runs to the Codex on Crack panel.
 
-```sh
-python3 -B install.py --worker-route openrouter/deepseek-v4.1-flash
-python3 -B install.py --worker-route openrouter/deepseek-v4.1-flash --apply
-```
+The three core skills are **crack-plan** (plan and choose), **crack-setup**
+(configure workers with preview and undo), and **crack** (execute and review).
 
-The option selects an existing catalog route; it does not configure the provider,
-collect a key, certify the model or make an inference request.
+For existing Astra Flash Orchestrator installations, read the
+[upgrade guide](docs/UPGRADING.md) before switching policies.
+Setup does not run paid model requests. Builds use the model access you authorize.
 
-### With Codex
+## What changed from Astra Flash Orchestrator?
 
-Ask Codex:
+The original package prescribed one arrangement: Astra plans and reviews, Flash
+builds. That is still a useful arrangement. Codex on Crack extends the idea to
+other configured workers, a Claude Code execution route, project-lead handoffs,
+and a panel for following and reviewing the work.
 
-```text
-Read INSTALL-IN-CODEX.md in this folder and install the package following it.
-Preserve my root model, reasoning effort, Router, config and authentication.
-Do not launch workers or run paid inference during installation.
-```
+The name changed because the package is no longer tied to two models.
+It is still built around a scoped assignment and a lead checking the result.
 
-### Verify the package locally
+## Judge the result, then the usage
 
-Release archives are tested before publication. If you also want to run the
-offline suite yourself:
+Does the finished product work? Does it look right? How much repair did it need?
+Those questions come before token totals.
 
-```sh
-python3 -B -m unittest discover -s tests -v
-```
+Moving work to another provider can preserve Codex allowance while adding costs
+elsewhere. Tokens are not weekly allowance, and subscription dollar estimates
+are not API bills. Resumed sessions may contain cumulative counters. The panel
+keeps missing information unknown rather than estimating it.
 
-For a nondefault profile, pass `--profile PROFILE` to the dry run, apply and doctor consistently. `--home` and `--codex-home` are available for explicit location overrides. Use the same locations for undo.
+The original usage result described a particular test. It is not a universal
+savings promise for this package or every model combination.
+[Record your own build](docs/RECORDING.md) to see what helps your work.
 
-### What changes
+## Before you use it
 
-| Location | Installed content |
-| --- | --- |
-| `~/.agents/skills/astra-flash-orchestrator/` | Skill, references, templates, doctor, plan validator and routing binding |
-| `$CODEX_HOME/agents/astra_flash_builder.toml` | Native builder pinned to Flash; nested agents disabled |
-| `$CODEX_HOME/AGENTS.md` | A marked, scoped workflow policy block |
-| `$CODEX_HOME/astra-flash-install-backups/` | Original files and an undo receipt |
+This is a preview release. See [troubleshooting](docs/TROUBLESHOOTING.md) for
+setup and compatibility issues. Instructions and file scopes are not an OS sandbox.
+Your selected model, credentials, and permissions stay under your control.
+Use one active orchestration policy per task.
 
-`CODEX_HOME` defaults to `~/.codex`. An existing nonempty `AGENTS.override.md` receives the policy instead of `AGENTS.md`. Other instructions are preserved. The policy keeps trivial work single-agent and honors explicit no-delegation requests, repository restrictions and managed policies. Use `--no-policy` for a skill/role-only installation.
+[Documentation](docs/README.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) ·
+[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Sources](SOURCES.md)
 
-Root model/effort, provider configuration, authentication and existing permissions stay unchanged. Installation does not start services, workers or model requests, and does not commit, push or deploy anything.
-
-## Start your first task
-
-**Fully quit and reopen the host app (ChatGPT or Codex), then start an Astra session.** A new chat alone may reuse a cached model catalog. Use:
-
-```text
-$astra-flash-orchestrator Use the existing plan in docs/plan.md to implement
-this feature. Keep Astra focused on planning and final review. Use one installed
-Flash builder for a coherent implementation and verification bundle. Do not poll
-the worker; review its completed patch and evidence in one batched pass.
-```
-
-Replace the example plan path with your actual plan or describe the feature. Your first authorized useful task should verify the child model and provider using host/router request metadata. A worker saying its model name is not proof.
-
-If the session does not expose the custom role or exact worker model, do not substitute another model or launch a second CLI. Check client support and session configuration first.
-
-## Check your setup
-
-From the repository folder:
-
-```sh
-python3 -B skill/astra-flash-orchestrator/scripts/doctor.py
-python3 -B skill/astra-flash-orchestrator/scripts/doctor.py --check-local-router
-```
-
-An installed copy reads its generated `routing.json`, so doctor checks the same
-route automatically. Pass `--worker-route` only when running doctor from a fresh
-source checkout or intentionally checking a different reviewed route.
-
-The first checks local configuration/catalog data. The optional second command makes only a local `/models` GET, with proxies and redirects disabled. It does not read authentication files or attach credentials; an authenticated Router may reject it even when normal Codex requests work. Do not disable Router authentication to make this check pass.
-
-Neither check proves paid inference works. See [troubleshooting](docs/TROUBLESHOOTING.md) and [validation evidence](docs/VALIDATION.md).
-
-## Updating and uninstalling
-
-For an update, download the new source, run its tests, and preview `python3 -B install.py --replace`. Review the differences before applying with `--replace --apply`. Existing package-owned files are backed up; unrelated files are not deleted. An existing valid `routing.json` preserves the installed provider when `--worker-route` is omitted. Pass the option explicitly only to change providers, and review that replacement before applying it. Do not edit generated `routing.json` or the agent model to force a different provider through preflight.
-
-Preview undo using the exact receipt printed during installation:
-
-```sh
-python3 -B install.py --undo /path/to/receipt.json
-```
-
-Add `--apply` to restore. Undo refuses if a managed file changed afterward, protecting later edits. Backups remain available. Keep a copy of the installer and receipt; receipts may contain private paths and original instructions and should never be published.
-
-## Contributing and distribution
-
-- [Contributing](CONTRIBUTING.md): tests, changes and evidence expectations.
-- [Security](SECURITY.md): privacy boundaries and safe reporting.
-- [Sources](SOURCES.md): provenance and upstream references.
-- [Release preparation](docs/RELEASE.md): GitHub description, topics and release checks.
-- [Changelog](CHANGELOG.md): changes from the original package.
-
-To validate the synthetic plan example:
-
-```sh
-python3 -B skill/astra-flash-orchestrator/scripts/validate_plan.py examples/invoice-filter/plan.json
-```
-
-The example is a planning fixture, not a runnable application. Markdown plans work without the optional manifest validator.
+MIT licensed. Not affiliated with OpenAI, Anthropic, or DeepSeek.

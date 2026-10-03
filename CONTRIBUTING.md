@@ -1,19 +1,52 @@
 # Contributing
 
-Keep changes focused on the native Astra/Flash workflow, installation reliability, useful task contracts and review evidence. Preserve the user's root model, existing Router and security boundaries.
+Focus on useful orchestration, reliable installation, and evidence of the result.
+Preserve the user's selected host model, provider setup, permissions, and the
+boundaries in [SECURITY.md](SECURITY.md).
 
-Use Python 3.11+ with no third-party runtime dependencies. Run from the repository root:
+## Development setup
+
+Node.js 24.15 or newer is required. Core helpers use a vendored TOML parser;
+the panel has pinned SDK and development dependencies. See [SOURCES.md](SOURCES.md).
 
 ```sh
-python3 -B -m unittest discover -s tests -v
-python3 -B skill/astra-flash-orchestrator/scripts/validate_plan.py examples/invoice-filter/plan.json
-python3 -B scripts/release.py --check
+npm ci --prefix panel
+npm run build --prefix panel
+node scripts/release.mjs
+npm test
+npm run test:legacy
+node scripts/release.mjs --check
 ```
 
-Tests use temporary synthetic homes and a loopback HTTP fixture. Do not run `install.py --apply` against your real home just to test a contribution. Never add paid inference to tests or CI.
+Regenerate the inventory after source changes and inspect its diff. The tests
+check it, so stale hashes cause packaging tests to fail. Without the panel's
+dependencies, some SDK/UI/build checks skip; that is not a full release check.
 
-For behavior changes, add meaningful regression tests. Explain the problem, resulting behavior, checks actually run and limitations. Test supported Python versions when changing syntax or standard-library behavior. Real-client/provider checks must be labeled separately from offline tests.
+Tests use temporary homes, synthetic fixtures, and temporary Git repositories.
+The plugin installation test uses a scratch `CODEX_HOME` and an installed
+`codex` binary (`CODEX_BIN` can select it); it skips when no binary exists.
+Never apply worker setup to your real profile to test a contribution, and never
+add paid inference to automated tests or CI.
 
-Do not commit credentials, local catalogs, generated routing bindings, receipts, backups, private logs or personal configuration. New sources require attribution and compatible licensing. User data and private task context must not be included in examples.
+## Repository map
 
-After changing distributable files, regenerate the inventory with `python3 -B scripts/release.py`, inspect its diff, then run `--check`. The release archive is built from a narrow file selection, not the entire working directory.
+| Path | Purpose |
+| --- | --- |
+| `plugins/codex-on-crack/skills/` | Three core skills and their helpers, adapter, and replay viewer. |
+| `panel/src/` | Panel controller, MCP server, and shared UI source. |
+| `panel/test/` | Panel security, protocol, host-bridge, and UI tests. |
+| `plugins/codex-on-crack-panel/` | Installable panel plugin and generated runtime. |
+| `scripts/` | Product install/doctor/undo and inventory/archive helpers. |
+| `tests/` | Core and packaging tests. |
+| `docs/` | Installation and product usage guides. |
+
+Edit panel source, then rebuild; do not hand-edit generated server bundles.
+Add regression tests for behavior changes where they catch a meaningful failure.
+Report the problem, resulting behavior, checks actually run, and remaining limits.
+Separate real-client or provider evidence from mock/protocol tests.
+
+Keep credentials, logs, local catalogs, receipts, backups, and personal settings
+out of changes. Do not publish private implementation notes or repository history
+as a side effect of preparing a release. New dependencies need compatible
+licensing and attribution. Changes to docs alone need link/content and packaging
+checks, not paid model runs.

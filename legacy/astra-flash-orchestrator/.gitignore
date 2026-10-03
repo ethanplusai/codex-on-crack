@@ -1,0 +1,16 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.before-*
+*.bak
+*.log
+.env
+.env.*
+!.env.example
+routing.json
+receipt.json
+config.toml
+auth.json
+astra-flash-install-backups/
+dist/
+.venv/

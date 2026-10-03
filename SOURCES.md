@@ -1,8 +1,25 @@
 # Sources and provenance
 
-Public documentation checked September 20, 2026. These are original package
-instructions and utilities, not a copy or distribution of Superpowers or Codex
-Router. Upstream documentation and local client behavior may change independently.
+Public documentation checked September 20-21, 2026. These are original package
+instructions and utilities, not a copy or distribution of Superpowers, GSD,
+Compound Engineering, or Codex Router, apart from the vendored parser listed
+below. Upstream documentation and local client behavior may change independently.
+
+## Vendored code
+
+- [smol-toml](https://github.com/squirrelchat/smol-toml) 1.8.0, BSD-3-Clause,
+  copyright Squirrel Chat et al. Its `dist/*.js` files are vendored unmodified in
+  `plugins/codex-on-crack/skills/crack/scripts/lib/vendor/smol-toml/`, together
+  with its LICENSE. It parses TOML, because Node has no built-in parser.
+
+## Panel dependencies
+
+The optional panel uses pinned versions of the official MCP SDK, MCP Apps SDK,
+and OpenAI MCP extensions package. Its reproducible dependency tree is recorded
+in [`panel/package-lock.json`](panel/package-lock.json); development uses esbuild
+and jsdom. Unlike the core helpers, the panel is not dependency-free. The runtime
+bundle is checked in so users do not need an npm install to open it. Review the
+bundled dependencies' licenses and notices as part of [contributor checks](CONTRIBUTING.md).
 
 ## Official Codex documentation
 
@@ -33,19 +50,15 @@ Router. Upstream documentation and local client behavior may change independentl
 - [Superpowers writing-plans](https://github.com/obra/superpowers/blob/main/skills/writing-plans/SKILL.md):
   explicit file/contracts/tests and independently reviewable deliverables.
 - [Superpowers subagent-driven-development](https://github.com/obra/superpowers/blob/main/skills/subagent-driven-development/SKILL.md):
-  bounded implementer context, task review and broad final review.
-
-## OpenCode adaptation references
-
-- [OpenCode agents](https://opencode.ai/docs/agents/): Markdown primary/subagent
-  definitions, per-agent model selection and Task permissions.
-- [OpenCode configuration](https://opencode.ai/docs/config/): global/project
-  locations, custom configuration directories and overrides.
-- [OpenCode models](https://opencode.ai/docs/models/) and
-  [CLI](https://opencode.ai/docs/cli/): provider/model IDs and model listing.
-- [OpenCode Task source](https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/tool/task.ts):
-  native invocation, task continuation and child-session model metadata.
+  bounded implementer context, task review and broad final review. Its
+  spec-then-quality review order informs the reviewer role.
+- [GSD Core](https://github.com/open-gsd/gsd-core): dependency waves of fresh
+  worker contexts, and plans small enough to finish and verify independently.
+- [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin):
+  each unit of work should make the next easier. This informs the practice of recording reusable project lessons.
+- [oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex): prior art for a
+  Codex workflow layer and its plugin marketplace layout.
 
 ## Provenance
 
-The package contains original workflow instructions and Python utilities. Its design was informed by a private prototype review and the public references above. Private attachments, prototype runner code, local configuration and personal review notes are not distributed. Upstream projects are referenced, not bundled or relicensed.
+The package contains original workflow instructions and Node utilities (Python in 1.x). Its design was informed by the public references above. Upstream projects are referenced, not bundled or relicensed.

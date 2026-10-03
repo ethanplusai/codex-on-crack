@@ -1,0 +1,30 @@
+{
+  "schema_version": 2,
+  "project": "REPLACE_ME",
+  "spec": "spec.md",
+  "max_parallel_writers": 1,
+  "phases": [
+    {
+      "id": "P1",
+      "goal": "REPLACE_ME",
+      "depends_on": [],
+      "integration_checks": [{"command": "REPLACE_ME", "expected": "REPLACE_ME"}]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "phase": "P1",
+      "role": "builder",
+      "risk": "normal",
+      "state": "planned",
+      "rung": "primary",
+      "review_cycles": 0,
+      "depends_on": [],
+      "brief": "tasks/T1.md",
+      "allowed_paths": ["REPLACE_ME"],
+      "acceptance": ["REPLACE_ME"],
+      "checks": [{"command": "REPLACE_ME", "expected": "REPLACE_ME"}]
+    }
+  ]
+}

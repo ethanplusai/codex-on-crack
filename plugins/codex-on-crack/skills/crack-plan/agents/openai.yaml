@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex on Crack · Plan"
+  short_description: "Recommend a lead/worker shape, then let the user choose."
+  default_prompt: "Use $codex-on-crack:crack-plan to recommend a lead, worker, and tool profile for this build from my configured models, then ask me to choose before starting."
+policy:
+  allow_implicit_invocation: true

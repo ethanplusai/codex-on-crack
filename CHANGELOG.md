@@ -1,74 +1,48 @@
 # Changelog
 
-## Unreleased
+## Unreleased: launch preparation
 
-- Document desktop-only OpenCode setup, make CLI model listing optional, and
-  provide file-only installation without Python or a separately installed CLI.
+- Explain the transition from Astra Flash Orchestrator and add a scoped upgrade guide.
+- Show a synthetic workspace walkthrough and visual feedback in the README.
+- Remove personal project names from documentation and regression fixtures.
+- Exclude agent context and raw capture paths from release archives.
+- Preserve the original public package and OpenCode installers under `legacy/`.
+- Require Node.js 24.15+ for the supported package and development environment.
 
-- Add native OpenCode primary and builder agents, with an inherited primary
-  model, explicitly pinned worker model and no nested Task delegation.
-- Add an offline OpenCode installer with global/project destinations, preview,
-  replacement backups, idempotent updates and guarded undo. Preserve provider
-  configuration and credentials; retain the existing Codex installation path.
-- Document OpenCode model selection, native Task continuation, shared-workspace
-  ownership and the distinction between offline checks and verified inference.
+## 2.2.2 / panel 0.5.1
 
-- Support explicit, reviewed DeepSeek V4.1 Flash routes through OpenRouter,
-  opencode Go, Command Code, Nous Research and Ollama Cloud while retaining the
-  direct DeepSeek API as the default. Existing alternate-route installations
-  reuse their validated routing binding on doctor checks and updates.
-- Make provider choice fail closed: no catalog auto-detection, silent fallback,
-  credential handling or paid certification during package installation.
-- State that users enter API keys only through the Router's private local prompt,
-  and prohibit installation agents from running `subagents certify`,
-  `test-model --live`, smoke tests or other paid probes.
-- Detect keys absorbed into `[agents]` by shape instead of by a list of
-  anticipated top-level names. A stray key there is read by Codex as an agent
-  name and stops the whole config loading, and the previous check only covered
-  five names, missing the realtime base-URL keys that caused a real failure.
-- Accept a legitimate `[agents]` table containing the recognized scalar settings
-  and agent role tables, and reject an agent name whose value is not a table.
-- Tell installation agents to select an existing Python 3.11+ interpreter rather
-  than assume `python3`, and never to edit `config.toml` to make a check pass.
+- Workspace selection sits above Overview, Review, and Usage & routes.
+- Review counts, run history, usage, launch profiles, and route verification
+  follow the selected workspace; switching views preserves that selection.
 
-## 1.2.0 — Measured workflow and simpler installation
+## 2.2.2 / panel 0.5.0
 
-- Add a measured efficiency graphic, per-token price comparison and transparent
-  benchmark methodology to the README.
-- Document thin orchestration as the only supported delegated workflow, not a
-  user-selectable mode, while retaining direct handling for trivial work and
-  targeted high-assurance review.
-- Reduce the normal terminal installation path to a guarded preview and apply;
-  keep the offline test suite as optional local verification.
-- Remove the unnecessary global subagent-default prerequisite. The installer
-  now relies only on its named role's pinned worker settings and explicitly
-  warns installation agents not to edit shared Codex model defaults.
-- Include SVG documentation assets in release archives.
+- One project destination groups host sessions, run history and visual questions.
+- A visual feedback inbox replaces side-by-side and slider comparison controls.
+- Revision-bound feedback is saved without interrupting a session; explicit
+  approval stays separate and agents read replies at natural work checkpoints.
+- Stable question registration and live refresh avoid opening a new panel per run.
 
-## 1.1.0 — Thin-root orchestration by default
+## 2.2.1 / panel 0.4.1
 
-- Keep Astra to a planning batch, one worker dispatch/wait, one batched acceptance review and the final response for normal phases.
-- Make Flash responsible for in-scope repository discovery, implementation, testing, debugging and routine browser/visual QA.
-- Remove progress polling, duplicate root investigation and ritual full-suite reruns from the default workflow.
-- Consolidate review findings into one correction request and one default correction cycle.
-- Retain additional Astra investigation and verification for concrete high-assurance risks.
+- Text-only Codex on Crack tab and header branding.
+- Explicit host and native worker session connections, including planning,
+  messages, tool activity, lifecycle and available usage before delegation.
+- Read-only registration refresh preserves controller ownership and permissions.
+- Source outages and partial logs remain visible; turns ending are not treated
+  as finished projects. Native session sources join recordings automatically.
 
-## 1.0.2 — Native delegation readiness
 
-- Refuse installation when Flash is present but not advertised for native subagents.
-- Explain full host-app restart, cached catalogs, and Router commands that can trigger paid verification.
-- Distinguish local route selection from runtime capability evidence.
+## Core 2.2.0 / panel 0.4.0
 
-## 1.0.1 — Public repository preparation
+- Record registered build-panel snapshots, screenshot revisions and session
+  events locally, with checkpoints for plans, quality, allowance and context.
+- Export a standalone offline replay with playback, scrubbing, source events,
+  and checkpoints. Free text and images are excluded by default.
+- Keep historical experiments and session-specific notes outside the release tree.
 
-- Support the Router's native authenticated `/v1` base path alongside capability paths; retain loopback and URL-shape validation.
-- Preserve permissions on an existing installation-backup directory.
-- Add regression tests for direct routing, rejected URL shapes and permission preservation.
-- Exclude local backup/cache artifacts from installed skill files and release archives.
-- Replace private handoff/audit notes with public installation, troubleshooting, contribution and security documentation.
-- Add reproducible release inventory and ZIP packaging with integrity checks.
+## Core 2.1.2 / panel 0.3.0
 
-## 1.0.0 — Initial package
-
-- Native Flash builder role, Astra orchestration skill, scoped personal policy, dry run and guarded undo.
-- Offline installation tests, configuration doctor, task templates and optional plan validator.
+- Add phase navigation, model handoffs, activity filters and first-run setup.
+- Prefer the embedded panel when an orchestration workflow starts.
+- Resolve explicit Opus requests through the existing configured Claude route.

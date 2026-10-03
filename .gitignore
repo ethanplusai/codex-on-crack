@@ -13,4 +13,13 @@ config.toml
 auth.json
 astra-flash-install-backups/
 dist/
+.local/
 .venv/
+
+# Local agent context (never committed)
+.agents/sessions/
+.agents/memory.md
+.crack/
+
+# Development dependencies and private capture data
+node_modules/

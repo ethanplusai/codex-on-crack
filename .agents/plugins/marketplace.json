@@ -1,0 +1,32 @@
+{
+  "name": "codex-on-crack",
+  "interface": {
+    "displayName": "Codex on Crack"
+  },
+  "plugins": [
+    {
+      "name": "codex-on-crack",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-on-crack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "codex-on-crack-panel",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-on-crack-panel"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

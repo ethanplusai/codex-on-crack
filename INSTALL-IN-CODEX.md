@@ -1,60 +1,83 @@
-# Install using Codex
+# Install Codex on Crack
 
-Give Codex the location of this repository and the prompt below. This authorization covers only installation, not a real delegated task.
+You need Node.js 24.15+, a Codex client with plugin support, and your own model
+access. For external Opus sessions, install and authenticate the official Claude
+Code client. Native workers require a compatible configured model route.
 
-```text
-Install Astra + Flash for Codex from this repository.
+## Install the plugins
 
-Use worker route deepseek/deepseek-v4.1-flash unless I explicitly name another
-route documented in this repository. Do not infer or auto-select a billing provider.
+Keep this checkout in a stable folder. From its root:
 
-Read README.md, install.py, POLICY.md and WORKER-INSTRUCTIONS.md first.
-Inspect relevant local configuration without printing secrets, full private
-Router URLs, authentication contents or unrelated instructions.
-
-Preserve my current Astra root model and reasoning effort, existing Router,
-config.toml, authentication, permissions and unrelated instructions. Do not
-install another runtime, dependencies or Router, restart services, or quit Codex.
-Do not add, change or remove [agents].default_subagent_model or
-[agents].default_subagent_reasoning_effort. The package's named role pins its own
-worker model and catalog-supported effort.
-
-Verify Python 3.11+, native subagent/custom-role client support, and the selected
-worker route in the effective configuration/catalog. Pass it to install.py with
---worker-route when it is not the direct DeepSeek default.
-The default python3 may be older than 3.11; find an existing 3.11+ interpreter
-such as python3.12 and use it for every command here. Do not install or upgrade a
-runtime to satisfy this.
-The package supports loopback /v1 and /_codex-router/<capability>/v1 endpoints.
-If configuration is contradictory or unsupported, report the discrepancy.
-Do not silently change models/providers or bypass preflight.
-Never edit config.toml to make a preflight check pass. Report the discrepancy and
-stop. Appending a table header such as [agents] to config.toml absorbs every
-top-level key written after it and can stop Codex loading its config at all.
-
-I will enter any provider API key myself through the Router's private local prompt.
-Do not ask me to paste a key into chat, inspect credential contents, or enter a key
-for me. Do not run subagents certify, test-model --live, a Router smoke test or any
-other paid inference command during installation. If the selected route is not
-already advertised with multi_agent_version v2, stop and report that prerequisite.
-
-Run the offline tests, then install.py for a dry run. If they pass and the
-proposed files match the documented scope, apply with install.py --apply.
-I authorize installation of the personal skill, native astra_flash_builder role,
-and scoped managed AGENTS policy exception. Retain repository restrictions,
-explicit no-delegation instructions and managed security controls.
-
-The role must pin Flash, inherit sandbox/approvals and disable nested agents.
-Do not invoke an external worker CLI. Run the static doctor after installation.
-An optional local catalog GET may fail when authentication is required; do not
-read or alter credentials to make it pass, or present it as inference evidence.
-
-Verify config/auth files and existing permissions are unchanged and unrelated
-policy content is preserved. Report installed paths, root/worker settings,
-test results, undo receipt and remaining runtime limitations.
-
-Do not launch workers, run paid inference, commit, push or deploy during setup.
-Explain that I should fully quit/reopen the host app and start an Astra session and invoke
-$astra-flash-orchestrator. Actual route verification belongs to the first
-separately authorized useful task, using host/router metadata.
+```sh
+codex plugin marketplace add "$PWD"
+codex plugin add codex-on-crack@codex-on-crack
 ```
+
+Add the optional activity and review panel:
+
+```sh
+codex plugin add codex-on-crack-panel@codex-on-crack
+```
+
+These commands register the local package in your Codex installation. They do not
+make paid model requests or configure provider credentials. Start a fresh chat
+after installing so the skills load.
+
+## Choose models
+
+Select your host model in the Codex composer. In a new chat, ask:
+
+> Help me set up Codex on Crack. Check my configured models and routes,
+> recommend a worker, and show me the setup changes before applying them.
+
+Setup preserves the selected host, effort, provider configuration, credentials,
+and unrelated roles. A compatible role in local metadata is not proof of a
+successful request to that provider.
+
+If you already use Astra Flash Orchestrator, follow the
+[upgrade guide](docs/UPGRADING.md). Use one orchestration policy for a task;
+setup does not silently replace a legacy policy.
+
+## Start a project
+
+> Help me plan this feature. Recommend who should do what, define acceptance
+> checks, and agree on the plan with me before building.
+
+Or request a supported arrangement directly:
+
+> Run subagents through Opus 5.5.
+
+To observe the build, ask to connect the workspace and its runs to the panel.
+See [panel configuration](plugins/codex-on-crack-panel/README.md) and
+[recording and replay](docs/RECORDING.md).
+
+## Update
+
+Update this checkout, then run the plugin installation commands again. Restart
+the client when generated agent files change and start a fresh conversation.
+Keep the checkout in place while the installation references it.
+
+## Terminal setup
+
+```sh
+node plugins/codex-on-crack/skills/crack/scripts/setup.mjs scan
+node plugins/codex-on-crack/skills/crack/scripts/setup.mjs plan --roles /absolute/path/to/draft.toml
+node plugins/codex-on-crack/skills/crack/scripts/setup.mjs apply --roles /absolute/path/to/draft.toml
+node plugins/codex-on-crack/skills/crack/scripts/doctor.mjs
+```
+
+Use `--profile` consistently if configuring a named profile. Generated roles and
+configuration live under `$CODEX_HOME/agents/` and `$CODEX_HOME/crack/`;
+setup receipts live under `$CODEX_HOME/crack-backups/`.
+
+## Undo worker setup
+
+```sh
+node plugins/codex-on-crack/skills/crack/scripts/setup.mjs undo --receipt /absolute/path/to/receipt.json
+node plugins/codex-on-crack/skills/crack/scripts/setup.mjs undo --receipt /absolute/path/to/receipt.json --apply
+```
+
+Undo previews first and refuses to overwrite later edits. Reverse newer
+transactions before older ones. Keep receipts. Removing a plugin and undoing
+worker setup are separate actions; plugin removal does not restore roles or
+policy changes.

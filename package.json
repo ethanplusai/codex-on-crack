@@ -1,0 +1,17 @@
+{
+  "name": "codex-on-crack",
+  "version": "2.2.2+codex.20261002",
+  "private": true,
+  "type": "module",
+  "description": "Coordinate configured models from Codex with planning, delegation, visual review, and recorded activity.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs plugins/codex-on-crack/skills/crack/viewer/test/*.test.mjs panel/test/*.test.mjs",
+    "release:check": "node scripts/release.mjs --check",
+    "pack": "node scripts/pack.mjs",
+    "test:legacy": "python3 -B -m unittest discover -s legacy/astra-flash-orchestrator/tests"
+  }
+}
