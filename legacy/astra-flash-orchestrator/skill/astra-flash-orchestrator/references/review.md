@@ -29,6 +29,13 @@ default, an ordinary unnamed reviewer will not automatically be Astra.
 
 ## Verify and decide
 
+Check the cheapest decisive gate first: buildability, then the affected behavior.
+If it fails, return concrete findings before spending time on broad audits or
+benchmarks that cannot establish acceptance yet. Preserve all required final
+checks. Do not rerun an unchanged timed-out workload; identify the expensive path
+or missing prerequisite first. A latency comparison needs equal successful work,
+not merely equal input sizes or zero decisions on a refused fixture.
+
 Start from the worker's concrete evidence: commands, exit statuses, salient output,
 and visual artifacts. Inspect the actual changed files. Independently rerun only a
 targeted check when evidence is missing, a failure is plausible, integration adds

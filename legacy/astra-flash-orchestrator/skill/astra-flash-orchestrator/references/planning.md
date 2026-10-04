@@ -52,11 +52,17 @@ when evidence changes; don't send a stale brief because it was written first.
 
 ## A ready brief
 
-Supply the expected behavior, non-goals, relevant context, exact interface shapes,
-allowed paths, forbidden changes, test cases, verification commands, prerequisites,
-completion report, and stop conditions. Include short examples or pseudocode when
-a tricky contract needs them. Do not write all implementation code or dictate
-every token; reserve implementation discretion for Flash inside the contract.
+For a repair, usually 100–250 words are enough: observed failure and evidence
+path, allowed files, required behavior, decisive check, and stop/report condition.
+Link the accepted contract and standing restrictions; do not repeat the history
+or every previous result. Add interface detail only where it affects correctness.
+Use existing APIs and helpers before introducing a new layer or generalized
+framework. Leave routine implementation choices to the worker.
+
+Order dependent work by what can fail first. Fix compilation and a representative
+positive/negative case before full-corpus accounting or latency work. This is a
+real acceptance dependency, not a new phase for every edit. On correction, send
+the consolidated remaining failures; do not redispatch already proven work.
 
 A long worker run should mean sustained execution of a clear assignment, not an
 unbounded self-directed project. Require a checkpoint when interrupted or blocked,

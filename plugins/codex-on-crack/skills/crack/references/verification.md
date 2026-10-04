@@ -17,6 +17,13 @@ honest check of the actual behavior, not a fixed count of stages.
 
 ## Prefer the smallest honest check
 
+Check buildability and the affected behavior before expensive corpus audits or
+benchmarks. A failed prerequisite should lead to one concrete correction, not
+more checks that cannot establish acceptance yet. Do not repeat an unchanged
+timed-out workload; first identify its expensive path or missing prerequisite.
+For latency comparisons, require equal successful work and disclose differing
+output counts; equal inputs or a zero-decision run alone cannot prove a gain.
+
 Run the targeted test for the behavior you changed. Widen to the full suite when
 shared code, packaging, configuration, or a release inventory makes the wider run
 the honest check. Do not rerun an entire suite after every small edit, and do not
